@@ -14,31 +14,31 @@ TODO:
 // App
 #include "zerocat.h"
 using CAT = bcstem::ZeroCat;
-//using CAT=ZeroRemote;
+//using CAT = bcstem::ZeroRemote;
 CAT g_cat;
 
-using namespace bcstem;
+//using namespace bcstem;
 using PinMap = CAT::PinMap;
 using MCU = CAT::PinMap::MCU;
 
-auto g = GlobalObject::get();
+//auto g = bcstem::GlobalObject::get();
 long _cnt = 0;
 
 void setup() {
   Serial.begin(MCU::bandRate);
-  if (MCU::needDelayForSerialSetup) {
+  if constexpr (MCU::needDelayForSerialSetup) {
     delay(300);
   }
 
   Serial.println("::setup");
 
   // ESPNOW
-  if (CAT::needESPNOW) {
-    setupEspNow();
+  if constexpr (CAT::needESPNOW) {
+    bcstem::setupEspNow();
   }
 
   // I2C
-  if (CAT::needI2C) {
+  if constexpr (CAT::needI2C) {
     Wire.begin(PinMap::SDA, PinMap::SLC);
   }
 
@@ -46,7 +46,7 @@ void setup() {
   g_cat.setup();
 
   // End setup
-  Serial.println(GlobalObject::get().errorLog);
+  Serial.println(bcstem::GlobalObject::get().errorLog);
 
 }
 
@@ -56,8 +56,8 @@ void loop() {
   //_cnt++;
   //Serial.println(_cnt);
 
-  if (!GlobalObject::get().setupPassed) {
-    Serial.println("!setupPassed");
+  if (!bcstem::GlobalObject::get().setupPassed) {
+    Serial.println("setup is not passed");
     return;
   }
 

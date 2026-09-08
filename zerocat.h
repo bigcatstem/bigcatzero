@@ -66,8 +66,8 @@ class ZeroCat {
     static const int ECHO = 15; // BLUE       //       YELLOW     15->4->15
     static const int TRIG = 19; // WHITE //23;      //       YELLOW
     static const int SERVO = 23; // YELLOW //21;     // GREY
-    static const int SDA   = 21;  // GREY 
-    static const int SLC   = 22;  // PURPLE
+    static const int SDA   = MCU::SDA; // 21;  // GREY 
+    static const int SLC   = MCU::SLC; // 22;  // PURPLE
 
     // MAC Address: b0:cb:d8:c6:52:04
   };
@@ -122,20 +122,23 @@ private:
   MotorSet _motors;
   Servo _servo;
 
-  RandomWalker<Sonar,MotorSet> _walker;//(_sonar, _motors, _servo);
+  RandomWalker<Sonar,MotorSet> _walker;
 
 };
 
 
 class ZeroRemote {
 
-  struct PinMap4ESP32C3 {
-    using MCU = ESP32C3;
+  struct PinMap4ESP32C3Zero {
+    using MCU = ESP32C3Zero;
+    static const int SDA = MCU::SDA; // 8
+    static const int SLC = MCU::SLC; // 9
   };
 
 public:
 
-  using PinMap = PinMap4ESP32C3;
+  using PinMap = PinMap4ESP32C3Zero;
+  static constexpr bool needI2C = true;
   static const bool needESPNOW = true;
 
   void setup() {
