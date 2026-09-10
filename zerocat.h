@@ -2,6 +2,10 @@
 
 #include "mcu.h"
 
+// ESP
+#include <esp_wifi.h>
+#include <esp_now.h>
+
 // Sensors
 #include "sonar.h"
 #include "motorset.h"
@@ -11,6 +15,8 @@
 #include "randomwalker.h"
 
 namespace bcstem {
+
+
 
 struct CFG {
   static const int sonarSensitivity = 1;
@@ -24,6 +30,17 @@ void testServo(Servo& servo_) {
     delay(10);
   }
   servo_.write(90);
+}
+
+// callback function that will be executed when data is received
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  XY16 xy;
+  memcpy(&xy, incomingData, sizeof(xy));
+  Serial.print(len);
+  Serial.print(" , ");
+  Serial.print(xy.x);
+  Serial.print(" , ");
+  Serial.println(xy.y);
 }
 
 class ZeroCat {
@@ -69,6 +86,7 @@ class ZeroCat {
     static const int SDA   = MCU::SDA; // 21;  // GREY 
     static const int SLC   = MCU::SLC; // 22;  // PURPLE
 
+
     // MAC Address: b0:cb:d8:c6:52:04
   };
 
@@ -99,7 +117,11 @@ public:
     Serial.println("ZeroCat::setup()");
 
     // ESPNOW
-    //setupEspNow();
+
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("Error initializing ESP-NOW");
+        return;
+    }
 
     // Sensors
     _servo.attach(PinMap::SERVO);
@@ -107,6 +129,8 @@ public:
     _motors.initialize();
     _sonar.setup(CFG::sonarSensitivity, CFG::cmLimit);
     _walker.initialize();
+
+    esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
 
     testServo(_servo);
     //scanI2C();
@@ -116,6 +140,8 @@ public:
   void loop() {
     _walker.loop();
   }
+
+  MotorSet& motors() { return _motors; }
 
 private:
   Sonar _sonar;
@@ -127,12 +153,28 @@ private:
 };
 
 
+// callback when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("\r\nLast Packet Send Status:");
+  Serial.print(status);
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? " Delivery Success" : " Delivery Fail");
+
+}
+
 class ZeroRemote {
 
   struct PinMap4ESP32C3Zero {
     using MCU = ESP32C3Zero;
+
+
+    static const int VRX = 14; //
+    static const int VRY = 13; //
+    static const int SW  = 12; //
+
     static const int SDA = MCU::SDA; // 8
     static const int SLC = MCU::SLC; // 9
+
+    // ESPNOW address: 70:af:09:0d:35:14
   };
 
 public:
@@ -144,11 +186,56 @@ public:
   void setup() {
     Serial.println("ZeroRemote::Remote");
     // ESPNOW
+
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(esp_now_send_cb_t(OnDataSent));
+  
+  // Register peer
+  memcpy(_peerInfo.peer_addr, carAddr, 6);
+  _peerInfo.channel = 1;
+  _peerInfo.encrypt = false;
+  
+  // Add peer        
+  if (esp_now_add_peer(&_peerInfo) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
+  }    
+
+
   }
 
   void loop() {
+    _xy.x = analogRead(PinMap::VRX);
+    _xy.y = analogRead(PinMap::VRY);
+
+    Serial.print(_xy.x);
+    Serial.print(" , ");
+    Serial.println(_xy.y);
+
+    // Send message via ESP-NOW
+    esp_err_t result = esp_now_send(carAddr, (uint8_t *) &_xy, sizeof(_xy));
+    
+    if (result == ESP_OK) {
+      Serial.println("Sent with success");
+    }
+    else {
+      Serial.print("Error sending the data ");
+      Serial.println(result);
+    }
+    delay(5000);
 
   }
+
+private:
+  esp_now_peer_info_t _peerInfo;
+  XY16 _xy;
 
 };
 

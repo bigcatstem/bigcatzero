@@ -2,8 +2,11 @@
  - In ESP, Some pin will reset the MCU
  - USB CDC on boot
  - ~/Library/Arduino15/packages/arduino/hardware/avr/<version>/boards.txt
-TODO:
+Done:
   - avoid D15 / D5
+TODO:
+  - Joystick button
+
 */
 
 //#include <Wire.h>
@@ -13,8 +16,8 @@ TODO:
 
 // App
 #include "zerocat.h"
-using CAT = bcstem::ZeroCat;
-//using CAT = bcstem::ZeroRemote;
+//using CAT = bcstem::ZeroCat;
+using CAT = bcstem::ZeroRemote;
 CAT g_cat;
 
 //using namespace bcstem;

@@ -6,6 +6,14 @@
 
 namespace bcstem {
 
+// Data ////////////////////////////////////////////////////////
+
+struct XY16 {
+  uint16_t x;
+  uint16_t y;
+};
+
+
 struct GlobalObject {
   bool setupPassed = true;
   String errorLog;
@@ -44,10 +52,18 @@ void printMacAddress() {
     GlobalObject::get().errorLog += "Failed to read MAC address\n";
     Serial.println("Failed to read MAC address");
   }
+
+  uint8_t primary;
+  wifi_second_chan_t second;
+  esp_wifi_get_channel(&primary, &second);
+
+  Serial.print("Channel: ");
+  Serial.println(primary);
 }
 
 bool setupEspNow() {
   WiFi.mode(WIFI_STA);
+  esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
   WiFi.STA.begin();
   printMacAddress();
   return true;
