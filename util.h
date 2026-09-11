@@ -9,8 +9,8 @@ namespace bcstem {
 // Data ////////////////////////////////////////////////////////
 
 struct XY16 {
-  uint16_t x;
-  uint16_t y;
+  int16_t x;
+  int16_t y;
 };
 
 
@@ -27,7 +27,11 @@ struct GlobalObject {
 
 // SERIAL ///////////////////////////////////////////////////////
 
-void serialEcho() 
+inline int delta(int x_, int y_) {
+  return abs(x_ - y_);
+}
+
+inline void serialEcho() 
 {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
@@ -41,7 +45,7 @@ void serialEcho()
 
 // ESPNOW ///////////////////////////////////////////////////////
 
-void printMacAddress() {
+inline void printMacAddress() {
   uint8_t baseMac[6];
   esp_err_t ret = esp_wifi_get_mac(WIFI_IF_STA, baseMac);
   if (ret == ESP_OK) {
@@ -61,7 +65,7 @@ void printMacAddress() {
   Serial.println(primary);
 }
 
-bool setupEspNow() {
+inline bool setupEspNow() {
   WiFi.mode(WIFI_STA);
   esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
   WiFi.STA.begin();
@@ -71,7 +75,7 @@ bool setupEspNow() {
 
 // I2C ///////////////////////////////////////////////////////
 
-bool testI2CAddress(byte addr_) {
+inline bool testI2CAddress(byte addr_) {
     Wire.beginTransmission(addr_);
     byte error = Wire.endTransmission();
     if (error==0) {
@@ -81,9 +85,11 @@ bool testI2CAddress(byte addr_) {
     Serial.printf("0x%02x error:", addr_);
     Serial.println(error);
     GlobalObject::get().errorLog += "testI2CAddress\n";
+
+    return false;
 }
 
-void scanI2C() {
+inline void scanI2C() {
   for (byte address = 1; address < 127; address++)
   {
     Wire.beginTransmission(address);

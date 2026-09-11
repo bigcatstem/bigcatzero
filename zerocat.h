@@ -14,6 +14,7 @@
 // App
 #include "randomwalker.h"
 
+
 namespace bcstem {
 
 
@@ -24,7 +25,7 @@ struct CFG {
   //static const int cmFree = 30;
 };
 
-void testServo(Servo& servo_) {
+inline void testServo(Servo& servo_) {
   for (int i=0;i<179;i+=10) {
     servo_.write(i);
     delay(10);
@@ -33,15 +34,8 @@ void testServo(Servo& servo_) {
 }
 
 // callback function that will be executed when data is received
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  XY16 xy;
-  memcpy(&xy, incomingData, sizeof(xy));
-  Serial.print(len);
-  Serial.print(" , ");
-  Serial.print(xy.x);
-  Serial.print(" , ");
-  Serial.println(xy.y);
-}
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) ;
+
 
 class ZeroCat {
 
@@ -114,6 +108,7 @@ public:
   }
 
   void setup() {
+
     Serial.println("ZeroCat::setup()");
 
     // ESPNOW
@@ -138,7 +133,7 @@ public:
   }
 
   void loop() {
-    _walker.loop();
+    //_walker.loop();
   }
 
   MotorSet& motors() { return _motors; }
@@ -153,23 +148,27 @@ private:
 };
 
 
+
+
+class ZeroRemote {
+
+
 // callback when data is sent
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+static void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("\r\nLast Packet Send Status:");
   Serial.print(status);
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? " Delivery Success" : " Delivery Fail");
 
 }
 
-class ZeroRemote {
 
-  struct PinMap4ESP32C3Zero {
-    using MCU = ESP32C3Zero;
+  struct PinMap4ESP32S3 {
+    using MCU = ESP32S3;
 
 
-    static const int VRX = 14; //
-    static const int VRY = 13; //
-    static const int SW  = 12; //
+    static const int VRX = 4; //
+    static const int VRY = 5; //
+    static const int SW  = 3; //
 
     static const int SDA = MCU::SDA; // 8
     static const int SLC = MCU::SLC; // 9
@@ -179,48 +178,58 @@ class ZeroRemote {
 
 public:
 
-  using PinMap = PinMap4ESP32C3Zero;
-  static constexpr bool needI2C = true;
+  using PinMap = PinMap4ESP32S3;
+  static constexpr bool needI2C = false;
   static const bool needESPNOW = true;
 
   void setup() {
     Serial.println("ZeroRemote::Remote");
     // ESPNOW
 
-  // Init ESP-NOW
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
+    // Init ESP-NOW
+    if (esp_now_init() != ESP_OK) {
+      Serial.println("Error initializing ESP-NOW");
+      return;
+    }
 
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(esp_now_send_cb_t(OnDataSent));
-  
-  // Register peer
-  memcpy(_peerInfo.peer_addr, carAddr, 6);
-  _peerInfo.channel = 1;
-  _peerInfo.encrypt = false;
-  
-  // Add peer        
-  if (esp_now_add_peer(&_peerInfo) != ESP_OK){
-    Serial.println("Failed to add peer");
-    return;
-  }    
+    // Once ESPNow is successfully Init, we will register for Send CB to
+    // get the status of Trasnmitted packet
+    esp_now_register_send_cb(esp_now_send_cb_t(OnDataSent));
+    
+    // Register peer
+    memcpy(_peerInfo.peer_addr, carAddr, 6);
+    _peerInfo.channel = 1;
+    _peerInfo.encrypt = false;
+    
+    // Add peer        
+    if (esp_now_add_peer(&_peerInfo) != ESP_OK){
+      Serial.println("Failed to add peer");
+      return;
+    }    
+
+    _x0 = analogRead(PinMap::VRX);
+    _y0 = analogRead(PinMap::VRY);
 
 
   }
 
   void loop() {
-    _xy.x = analogRead(PinMap::VRX);
-    _xy.y = analogRead(PinMap::VRY);
+    int x = analogRead(PinMap::VRX) - _x0;
+    int y = analogRead(PinMap::VRY) - _y0;
 
-    Serial.print(_xy.x);
+    if (delta(_lastXY.x, x) < 100 && delta(_lastXY.y, y) < 100) {
+      return;
+    }
+
+    _lastXY.x = x;
+    _lastXY.y = y;
+
+    Serial.print(_lastXY.x);
     Serial.print(" , ");
-    Serial.println(_xy.y);
+    Serial.println(_lastXY.y);
 
     // Send message via ESP-NOW
-    esp_err_t result = esp_now_send(carAddr, (uint8_t *) &_xy, sizeof(_xy));
+    esp_err_t result = esp_now_send(carAddr, (uint8_t *) &_lastXY, sizeof(_lastXY));
     
     if (result == ESP_OK) {
       Serial.println("Sent with success");
@@ -229,13 +238,16 @@ public:
       Serial.print("Error sending the data ");
       Serial.println(result);
     }
-    delay(5000);
+    delay(100);
 
   }
 
 private:
   esp_now_peer_info_t _peerInfo;
-  XY16 _xy;
+  XY16 _lastXY;
+
+  int _x0;
+  int _y0;
 
 };
 

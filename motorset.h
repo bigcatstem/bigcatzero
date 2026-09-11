@@ -34,9 +34,17 @@ public:
   }
 
   // level: -255 to 255
-  void moveAnalogSingle(int pin1_, int pin2_, int level_) {
+  void moveAnalogSingle(int pin1_, int pin2_, int level_) {    
     level_ = level_ >  255?  255 : level_;
     level_ = level_ < -255? -255 : level_;
+
+    if (level_ > 0 && level_ < 100) {
+      level_ = 0;
+    }
+
+    if (level_ < 0 && level_ > -100) {
+      level_ = 0;
+    }
 
     if (level_ > 0) {
       analogWrite(pin1_, level_);
