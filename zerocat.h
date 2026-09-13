@@ -1,14 +1,14 @@
 #pragma once
 
-#include "mcu.h"
+#include "bcstem/mcu.h"
 
 // ESP
 #include <esp_wifi.h>
 #include <esp_now.h>
 
 // Sensors
-#include "sonar.h"
-#include "motorset.h"
+#include "bcstem/sonar.h"
+#include "bcstem/motorset.h"
 #include <ESP32Servo.h>
 
 // App
@@ -32,10 +32,6 @@ inline void testServo(Servo& servo_) {
   }
   servo_.write(90);
 }
-
-// callback function that will be executed when data is received
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) ;
-
 
 class ZeroCat {
 
@@ -87,6 +83,10 @@ class ZeroCat {
 
 public:
 
+  // callback function that will be executed when data is received
+  static void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) ;
+
+
   using PinMap = PinMap4ESP32S;
   using MCU = PinMap::MCU;
 
@@ -133,7 +133,7 @@ public:
   }
 
   void loop() {
-    //_walker.loop();
+    _walker.loop();
   }
 
   MotorSet& motors() { return _motors; }

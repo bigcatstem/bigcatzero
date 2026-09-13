@@ -11,7 +11,7 @@ bool isBetween(int x_, int a_, int b_) {
   return x_>=a_ && x_<=b_;
 }
 
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+static void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   XY16 xy;
   memcpy(&xy, incomingData, sizeof(xy));
   Serial.print(len);
