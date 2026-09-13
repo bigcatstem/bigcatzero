@@ -55,28 +55,27 @@ class ZeroCat {
     D23 YELLOW    SERVO
   */
 
-    static const int FL2 = 2;        // L-IN2 YELLOW  4->2 Green
-    static const int FL1 = 4;        // L-IN1 GREEN   2->15->4 BLUE  
-    static const int MotorL1 = FL1;
-    static const int MotorL2 = FL2;
+    static const uint8_t FL2 = 2;        // L-IN2 YELLOW  4->2 Green
+    static const uint8_t FL1 = 4;        // L-IN1 GREEN   2->15->4 BLUE  
+    static const uint8_t MotorL1 = FL1;
+    static const uint8_t MotorL2 = FL2;
     //static const int BL1 = 22;       // L-IN3 PURPLE
     //static const int BL2 = 21;       // L-IN4 GREY
     //static const int FR1 = 18;       // R-IN2 BLACK
     //static const int FR2 = 19;       // R-IN1 WHITE
-    static const int BR1 = 16;       // R-IN4 ORANGE
-    static const int BR2 = 17;       // R-IN3 RED
-    static const int MotorR1 = BR1;
-    static const int MotorR2 = BR2;
-    static const int ECHO = 15; // BLUE       //       YELLOW     15->4->15
-    static const int TRIG = 19; // WHITE //23;      //       YELLOW
-    static const int SERVO = 23; // YELLOW //21;     // GREY
-    static const int SDA   = MCU::SDA; // 21;  // GREY 
-    static const int SLC   = MCU::SLC; // 22;  // PURPLE
+    static const uint8_t BR1 = 16;       // R-IN4 ORANGE
+    static const uint8_t BR2 = 17;       // R-IN3 RED
+    static const uint8_t MotorR1 = BR1;
+    static const uint8_t MotorR2 = BR2;
+    static const uint8_t ECHO = 15; // BLUE       //       YELLOW     15->4->15
+    static const uint8_t TRIG = 19; // WHITE //23;      //       YELLOW
+    static const uint8_t SERVO = 23; // YELLOW //21;     // GREY
+    static const uint8_t SDA   = MCU::SDA; // 21;  // GREY 
+    static const uint8_t SLC   = MCU::SLC; // 22;  // PURPLE
 
 
     // MAC Address: b0:cb:d8:c6:52:04
   };
-
 
 public:
 
@@ -128,7 +127,7 @@ public:
   // callback function that will be executed when data is received
   void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData, int len) {
 
-    XY16 xy;
+    XY16 xy; // -2048 to 2048
     memcpy(&xy, incomingData, sizeof(xy));
     Serial.print(len);
     Serial.print(" , ");
@@ -136,21 +135,32 @@ public:
     Serial.print(" , ");
     Serial.println(xy.y);
 
-    if (isBetween((xy.y)/8,-100,100)) {
-      if (xy.x/8 > 100) {
-        _motors.backward();
-      } else if (xy.x/8 < -100) {
-        _motors.forward();
-      } else {
-        _motors.stop();
-      }
-      //motors.moveAnalog((xy.x-2048)/8, (xy.x-2048)/8);
-    } else if (xy.y>0) {
-      _motors.rotateLeft();
-      //motors.moveAnalog(0, (xy.x-2048)/8);
+    auto x = xy.x / 8;
+    auto y = xy.y / 8;
+
+    int32_t r = sqrt (x*x + y*y);
+
+    if (xy.x > 0) {
+      r = r * -1;
+    }
+
+    //if (isBetween(y,-10,10)) {
+      //if (xy.x != 0) {
+        //_motors.backward();
+        //_motors.moveAnalog(r, r);
+      //} else if (xy.x < 0) {
+        //_motors.forward();
+        //_motors.moveAnalog(r*-1, r*-1);
+      //} else {
+        //_motors.stop();
+      //}
+    //} else 
+    if (xy.y<0) {
+      //_motors.rotateLeft();
+      _motors.moveAnalog(r,r+y*2);
     } else {
-      _motors.rotateRight();
-      //motors.moveAnalog((xy.x-2048)/8, 0);
+      //_motors.rotateRight();
+      _motors.moveAnalog(r-y*2, r);
     }
 
   }

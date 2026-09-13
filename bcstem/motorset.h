@@ -1,5 +1,7 @@
 #pragma once
 
+// Set MIN_OUTPUT, so that the motor is more responsive to INPUT
+
 namespace bcstem {
 
 template<int FL1, int FL2, int FR1, int FR2//,
@@ -8,9 +10,16 @@ template<int FL1, int FL2, int FR1, int FR2//,
 >
 class MotorSetT {
 
-static const int FRONT = 1;
-static const int BACK = -1;
-static const int STOP = 0;
+static constexpr int MIN_OUTPUT = 150; // Min value for the motor to move 
+static constexpr int MAX_OUTPUT = 255;
+
+static constexpr int FRONT = 1;
+static constexpr int BACK = -1;
+static constexpr int STOP = 0;
+
+static constexpr uint32_t PWM_FREQUENCY = 20000;
+static constexpr uint8_t PWM_RESOLUTION = 8;
+
 
 public:
 
@@ -22,7 +31,8 @@ public:
     };
 
     for (auto pin: pins){
-      pinMode(pin, OUTPUT);
+      ledcAttach(pin, PWM_FREQUENCY, PWM_RESOLUTION);
+      //pinMode(pin, OUTPUT);
     }
 
     stop();
@@ -34,28 +44,31 @@ public:
   }
 
   // level: -255 to 255
+  // Out be too small
+  // IN          OUT
+  // [0,MAX]     [MIN,MAX]
+  // [0,-MAX]    [-MIN,-MAX]
   void moveAnalogSingle(int pin1_, int pin2_, int level_) {    
     level_ = level_ >  255?  255 : level_;
     level_ = level_ < -255? -255 : level_;
 
-    if (level_ > 0 && level_ < 100) {
-      level_ = 0;
-    }
+    int out = MIN_OUTPUT + (MAX_OUTPUT-MIN_OUTPUT) * abs(level_) / MAX_OUTPUT; // always positive
 
-    if (level_ < 0 && level_ > -100) {
-      level_ = 0;
-    }
+    if (out > MAX_OUTPUT*0.9) { out = MAX_OUTPUT; }
+    if (level_ == 0) { out = 0; }
+    Serial.println(out);
 
-    if (level_ > 0) {
-      analogWrite(pin1_, level_);
+    if (level_ > 0 ) {
+      analogWrite(pin1_, out);
       analogWrite(pin2_, 0);
-    } else if (level_ < 0) {
+    } else if (level_ < 0 ) {
       analogWrite(pin1_, 0);
-      analogWrite(pin2_, level_*-1);
+      analogWrite(pin2_, out);
     } else {
       analogWrite(pin1_, 0);
       analogWrite(pin2_, 0);
     }
+
   }
 
   // l/r: -255 to 255

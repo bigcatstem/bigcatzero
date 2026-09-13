@@ -31,8 +31,8 @@ GPIO3
 
   static const bool needDelayForSerialSetup = true;
   static const long bandRate = 115200;
-  static const int SDA = 8;
-  static const int SLC = 9;
+  static const uint8_t SDA = 8;
+  static const uint8_t SLC = 9;
 
   // MAC Address: b0:cb:d8:c6:52:04
 };
@@ -40,16 +40,16 @@ GPIO3
 struct ESP32S {
   static const bool needDelayForSerialSetup = false;
   static const long bandRate = 115200;
-  static const int SDA = 21;
-  static const int SLC = 22;
+  static const uint8_t SDA = 21;
+  static const uint8_t SLC = 22;
   // MAC Address: b0:cb:d8:c6:52:04
 };
 
 struct ESP32S3 {
   static const bool needDelayForSerialSetup = false;
   static const long bandRate = 115200;
-  static const int SDA = 8;
-  static const int SLC = 9;
+  static const uint8_t SDA = 8;
+  static const uint8_t SLC = 9;
   // MAC Address: b0:cb:d8:c6:52:04
 };
 

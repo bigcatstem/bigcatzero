@@ -46,6 +46,26 @@ inline int delta(int x_, int y_) {
   return abs(x_ - y_);
 }
 
+struct Stat {
+  long total = 0;
+  int min = 10000;
+  int max = 0;
+  int count = 0;
+
+  void sample(int pt_) {
+    count ++;
+    total += pt_;
+    max = max>pt_? max : pt_;
+    min = min<pt_? min : pt_;
+  }
+
+  int average() { return total / count; }
+  int derivation() {
+    int a = average();
+    return max-a > a-min ? max-a : a-min;
+  }
+};
+
 // SERIAL ///////////////////////////////////////////////////////
 
 inline void serialEcho() 
