@@ -1,23 +1,20 @@
 #pragma once
 
-#include "bcstem/mcu.h"
+#include "../bcstem/mcu.h"
 
 // ESP
 #include <esp_wifi.h>
 #include <esp_now.h>
 
 // Sensors
-#include "bcstem/sonar.h"
-#include "bcstem/motorset.h"
+#include "../bcstem/sonar.h"
+#include "../bcstem/motorset.h"
 #include <ESP32Servo.h>
 
 // App
 #include "randomwalker.h"
 
-
 namespace bcstem {
-
-
 
 struct CFG {
   static const int sonarSensitivity = 1;
@@ -83,15 +80,15 @@ class ZeroCat {
 
 public:
 
-  // callback function that will be executed when data is received
-  static void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) ;
-
-
   using PinMap = PinMap4ESP32S;
   using MCU = PinMap::MCU;
 
-  static const bool needI2C = true;
-  static const bool needESPNOW = true;
+  static constexpr const uint8_t espNowAddr[] = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};  // ESP32S
+  static constexpr const uint8_t espNowTargetAddr[] = {0, 0, 0, 0, 0, 0};
+
+  static constexpr bool needI2C = true;
+  static constexpr bool isEspNowReceiver = true;
+  static constexpr bool isEspNowSender = false;
 
   //using Sonar = SonarT<PinMap::ECHO, PinMap::TRIG>;
   //using Sonar = Sonar6180;
@@ -104,19 +101,11 @@ public:
 
   ZeroCat() : _walker(_sonar, _motors, _servo)
   {
-
   }
 
   void setup() {
 
     Serial.println("ZeroCat::setup()");
-
-    // ESPNOW
-
-    if (esp_now_init() != ESP_OK) {
-        Serial.println("Error initializing ESP-NOW");
-        return;
-    }
 
     // Sensors
     _servo.attach(PinMap::SERVO);
@@ -125,18 +114,48 @@ public:
     _sonar.setup(CFG::sonarSensitivity, CFG::cmLimit);
     _walker.initialize();
 
-    esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
-
     testServo(_servo);
     //scanI2C();
     //g_timerServo.start();
   }
 
   void loop() {
-    _walker.loop();
+    //_walker.loop();
   }
 
-  MotorSet& motors() { return _motors; }
+  void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {}
+
+  // callback function that will be executed when data is received
+  void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData, int len) {
+
+    XY16 xy;
+    memcpy(&xy, incomingData, sizeof(xy));
+    Serial.print(len);
+    Serial.print(" , ");
+    Serial.print(xy.x);
+    Serial.print(" , ");
+    Serial.println(xy.y);
+
+    if (isBetween((xy.y)/8,-100,100)) {
+      if (xy.x/8 > 100) {
+        _motors.backward();
+      } else if (xy.x/8 < -100) {
+        _motors.forward();
+      } else {
+        _motors.stop();
+      }
+      //motors.moveAnalog((xy.x-2048)/8, (xy.x-2048)/8);
+    } else if (xy.y>0) {
+      _motors.rotateLeft();
+      //motors.moveAnalog(0, (xy.x-2048)/8);
+    } else {
+      _motors.rotateRight();
+      //motors.moveAnalog((xy.x-2048)/8, 0);
+    }
+
+  }
+
+  //MotorSet& motors() { return _motors; }
 
 private:
   Sonar _sonar;
@@ -144,110 +163,6 @@ private:
   Servo _servo;
 
   RandomWalker<Sonar,MotorSet> _walker;
-
-};
-
-
-
-
-class ZeroRemote {
-
-
-// callback when data is sent
-static void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nLast Packet Send Status:");
-  Serial.print(status);
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? " Delivery Success" : " Delivery Fail");
-
-}
-
-
-  struct PinMap4ESP32S3 {
-    using MCU = ESP32S3;
-
-
-    static const int VRX = 4; //
-    static const int VRY = 5; //
-    static const int SW  = 3; //
-
-    static const int SDA = MCU::SDA; // 8
-    static const int SLC = MCU::SLC; // 9
-
-    // ESPNOW address: 70:af:09:0d:35:14
-  };
-
-public:
-
-  using PinMap = PinMap4ESP32S3;
-  static constexpr bool needI2C = false;
-  static const bool needESPNOW = true;
-
-  void setup() {
-    Serial.println("ZeroRemote::Remote");
-    // ESPNOW
-
-    // Init ESP-NOW
-    if (esp_now_init() != ESP_OK) {
-      Serial.println("Error initializing ESP-NOW");
-      return;
-    }
-
-    // Once ESPNow is successfully Init, we will register for Send CB to
-    // get the status of Trasnmitted packet
-    esp_now_register_send_cb(esp_now_send_cb_t(OnDataSent));
-    
-    // Register peer
-    memcpy(_peerInfo.peer_addr, carAddr, 6);
-    _peerInfo.channel = 1;
-    _peerInfo.encrypt = false;
-    
-    // Add peer        
-    if (esp_now_add_peer(&_peerInfo) != ESP_OK){
-      Serial.println("Failed to add peer");
-      return;
-    }    
-
-    _x0 = analogRead(PinMap::VRX);
-    _y0 = analogRead(PinMap::VRY);
-
-
-  }
-
-  void loop() {
-    int x = analogRead(PinMap::VRX) - _x0;
-    int y = analogRead(PinMap::VRY) - _y0;
-
-    if (delta(_lastXY.x, x) < 100 && delta(_lastXY.y, y) < 100) {
-      return;
-    }
-
-    _lastXY.x = x;
-    _lastXY.y = y;
-
-    Serial.print(_lastXY.x);
-    Serial.print(" , ");
-    Serial.println(_lastXY.y);
-
-    // Send message via ESP-NOW
-    esp_err_t result = esp_now_send(carAddr, (uint8_t *) &_lastXY, sizeof(_lastXY));
-    
-    if (result == ESP_OK) {
-      Serial.println("Sent with success");
-    }
-    else {
-      Serial.print("Error sending the data ");
-      Serial.println(result);
-    }
-    delay(100);
-
-  }
-
-private:
-  esp_now_peer_info_t _peerInfo;
-  XY16 _lastXY;
-
-  int _x0;
-  int _y0;
 
 };
 

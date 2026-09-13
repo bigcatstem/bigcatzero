@@ -15,9 +15,10 @@ TODO:
 #include "bcstem/util.h"
 
 // App
-#include "zerocat.h"
-//using CAT = bcstem::ZeroCat;
-using CAT = bcstem::ZeroRemote;
+#include "bcapp/zerocat.h"
+#include "bcapp/zeroremote.h"
+using CAT = bcstem::ZeroCat;
+//using CAT = bcstem::ZeroRemote;
 CAT g_cat;
 
 //using namespace bcstem;
@@ -26,6 +27,21 @@ using MCU = CAT::PinMap::MCU;
 
 //auto g = bcstem::GlobalObject::get();
 long _cnt = 0;
+
+// So that, the handle in CAT can be a normal member function
+// IsEnable
+void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData_, int len_) {
+
+  if constexpr (CAT::isEspNowReceiver) {
+    g_cat.onEspNowReceived(macAddr_, incomingData_, len_);
+  }
+}
+
+void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {
+  if constexpr (CAT::isEspNowSender) {
+    g_cat.onEspNowSent(macAddr_, status);
+  }
+}
 
 void setup() {
   Serial.begin(MCU::bandRate);
@@ -36,8 +52,19 @@ void setup() {
   Serial.println("::setup");
 
   // ESPNOW
-  if constexpr (CAT::needESPNOW) {
+  if constexpr (CAT::isEspNowReceiver || CAT::isEspNowSender) {
     bcstem::setupEspNow();
+
+    if constexpr (CAT::isEspNowReceiver)
+    {
+      bcstem::setupEspNowReceiver(onEspNowReceived);
+    }
+
+    if constexpr (CAT::isEspNowSender)
+    {
+      bcstem::setupEspNowSender(CAT::espNowTargetAddr, onEspNowSent);
+    }
+
   }
 
   // I2C
@@ -59,7 +86,7 @@ void loop() {
   //_cnt++;
   //Serial.println(_cnt);
 
-  if (!bcstem::GlobalObject::get().setupPassed) {
+  if (!bcstem::GlobalObject::get().setupPassed()) {
     Serial.println("setup is not passed");
     return;
   }

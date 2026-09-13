@@ -57,11 +57,11 @@ public:
     //Wire.begin(SDA, SLC);
 
     if(!bcstem::testI2CAddress(0x29)) {
-      GlobalObject::get().setupPassed = false;
+      GlobalObject::failSetup();
     }
 
     if (!_53L0.init()) {
-      GlobalObject::get().setupPassed = false;
+      GlobalObject::failSetup();
     }
   }  
 
@@ -89,7 +89,7 @@ public:
     SonarBase::setup(sensitivity_, cmLimit_);
 
     if(!bcstem::testI2CAddress(0x29)) {
-      GlobalObject::get().setupPassed = false;
+      GlobalObject::failSetup();
     }
 
     //Wire.begin(SDA, SLC);

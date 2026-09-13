@@ -3,8 +3,8 @@
 
 namespace bcstem {
 
-static const uint8_t carAddr[]           = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};  // ESP32S
-static const uint8_t remoteControlAddr[] = {0x70, 0xAF, 0x09, 0x0D, 0x35, 0x14};  // ESP32C3 super mini
+//static const uint8_t carAddr[]           = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};  // ESP32S
+//static const uint8_t remoteControlAddr[] = {0x70, 0xAF, 0x09, 0x0D, 0x35, 0x14};  // ESP32C3 super mini
 // 7c:4f:ad:b6:0d:ec // ESP32S3
 
 struct ESP32C3Zero {
