@@ -17,6 +17,7 @@ TODO:
 // App
 #include "bcapp/zerocat.h"
 #include "bcapp/zeroremote.h"
+
 using CAT = bcstem::ZeroCat;
 //using CAT = bcstem::ZeroRemote;
 CAT g_cat;

@@ -54,7 +54,7 @@ public:
 
     int out = MIN_OUTPUT + (MAX_OUTPUT-MIN_OUTPUT) * abs(level_) / MAX_OUTPUT; // always positive
 
-    if (out > MAX_OUTPUT*0.9) { out = MAX_OUTPUT; }
+    //if (out > MAX_OUTPUT*0.9) { out = MAX_OUTPUT; }
     if (level_ == 0) { out = 0; }
     Serial.println(out);
 

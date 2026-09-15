@@ -120,6 +120,13 @@ public:
 
   void loop() {
     //_walker.loop();
+
+    int cm = _sonar.ping();
+    if (cm < 10) {
+      _walker.blockedScan();
+      _motors.moveAnalog(-50, -50);
+    }
+
   }
 
   void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {}
@@ -138,12 +145,31 @@ public:
     auto x = xy.x / 8;
     auto y = xy.y / 8;
 
-    int32_t r = sqrt (x*x + y*y);
+    Serial.print(" x=");
+    Serial.print(x);
+    Serial.print(" y=");
+    Serial.print(y);
 
+    if (x==0) {
+      Serial.println();
+      _motors.moveAnalog(y, y*-1);
+      return;
+    } 
+
+    float fy = abs(y);
+    float fx = abs(x);
+    float ft = atan(fy/fx);
+    int32_t r = sqrt (fx*fx + fy*fy);
     if (xy.x > 0) {
       r = r * -1;
     }
-
+    int16_t o = r * cos(2*ft);
+    Serial.print(" t=");
+    Serial.print(ft);
+    Serial.print(" t2=");
+    Serial.print(ft*180.0/3.14);
+    Serial.print(" o=");
+    Serial.println(o);
     //if (isBetween(y,-10,10)) {
       //if (xy.x != 0) {
         //_motors.backward();
@@ -155,12 +181,13 @@ public:
         //_motors.stop();
       //}
     //} else 
+
     if (xy.y<0) {
       //_motors.rotateLeft();
-      _motors.moveAnalog(r,r+y*2);
+      _motors.moveAnalog(r, o);
     } else {
       //_motors.rotateRight();
-      _motors.moveAnalog(r-y*2, r);
+      _motors.moveAnalog(o, r);
     }
 
   }
