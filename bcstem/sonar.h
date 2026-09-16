@@ -1,7 +1,7 @@
 #pragma once
 //#include <Wire.h>
 //#include "bcstem/util.h"
-#include <VL6180X.h>
+//#include <VL6180X.h>
 #include <VL53L0X.h>
 #include "util.h"
 
@@ -82,6 +82,7 @@ private:
 
 };
 
+/*
 class Sonar6180 : public SonarBase {
 
 public: 
@@ -114,6 +115,7 @@ private:
   VL6180X _6180;
 
 };
+*/
 
 template<int ECHO,int TRIG>
 class SonarT : public SonarBase {
@@ -122,7 +124,7 @@ public:
 
   void setup(int sensitivity_, int cmLimit_) {
     SonarBase::setup(sensitivity_, cmLimit_);
-    Serial.println("SonarT::initialize");
+    Serial.println("SonarT::setup");
 
     pinMode(ECHO, INPUT);
     pinMode(TRIG, OUTPUT);

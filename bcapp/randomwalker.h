@@ -32,8 +32,8 @@ public:
     _servo(servo_)
   {}
 
-  void initialize() {
-    Serial.println("Walker::initialize");
+  void setup() {
+    Serial.println("Walker::setup");
     minSteps[ACTION_FORWARD] = 3000;
     minSteps[ACTION_RIGHT] = 200;
     minSteps[ACTION_LEFT] = 200;

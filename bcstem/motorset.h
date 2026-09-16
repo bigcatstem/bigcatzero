@@ -23,8 +23,8 @@ static constexpr uint8_t PWM_RESOLUTION = 8;
 
 public:
 
-  void initialize() {
-    Serial.println("MotorSetT::initialize");
+  void setup() {
+    Serial.println("MotorSetT::setup");
     const int pins[] = {
       FL1, FL2, FR1, FR2//,
       //BL1, BL2, BR1, BR2

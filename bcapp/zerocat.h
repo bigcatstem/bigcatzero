@@ -13,6 +13,7 @@
 
 // App
 #include "randomwalker.h"
+#include "remotewalker.h"
 
 namespace bcstem {
 
@@ -98,8 +99,16 @@ public:
   using MotorSet = MotorSetT<PinMap::MotorL1, PinMap::MotorL2,
         PinMap::MotorR1, PinMap::MotorR2>;
 
-  ZeroCat() : _walker(_sonar, _motors, _servo)
+  enum WalkerMode {
+    RANDOM_WALKER = 0,
+    REMOTE_WALKER
+  };
+
+  ZeroCat() : 
+    _randomWalker(_sonar, _motors, _servo),
+    _remoteWalker(_sonar, _motors, _servo)
   {
+    _walkerMode = REMOTE_WALKER;
   }
 
   void setup() {
@@ -109,9 +118,10 @@ public:
     // Sensors
     _servo.attach(PinMap::SERVO);
     _servo.write(90);
-    _motors.initialize();
+    _motors.setup();
     _sonar.setup(CFG::sonarSensitivity, CFG::cmLimit);
-    _walker.initialize();
+    _randomWalker.setup();
+    _remoteWalker.setup();
 
     testServo(_servo);
     //scanI2C();
@@ -119,12 +129,14 @@ public:
   }
 
   void loop() {
-    //_walker.loop();
 
-    int cm = _sonar.ping();
-    if (cm < 10) {
-      _walker.blockedScan();
-      _motors.moveAnalog(-50, -50);
+    switch(_walkerMode) {
+      case REMOTE_WALKER:
+        _remoteWalker.loop();
+      break;
+      case RANDOM_WALKER:
+        _randomWalker.loop();
+      break;
     }
 
   }
@@ -136,70 +148,25 @@ public:
 
     XY16 xy; // -2048 to 2048
     memcpy(&xy, incomingData, sizeof(xy));
-    Serial.print(len);
-    Serial.print(" , ");
+
     Serial.print(xy.x);
     Serial.print(" , ");
     Serial.println(xy.y);
 
-    auto x = xy.x / 8;
-    auto y = xy.y / 8;
+    _remoteWalker.onControl(xy.x, xy.y);
 
-    Serial.print(" x=");
-    Serial.print(x);
-    Serial.print(" y=");
-    Serial.print(y);
-
-    if (x==0) {
-      Serial.println();
-      _motors.moveAnalog(y, y*-1);
-      return;
-    } 
-
-    float fy = abs(y);
-    float fx = abs(x);
-    float ft = atan(fy/fx);
-    int32_t r = sqrt (fx*fx + fy*fy);
-    if (xy.x > 0) {
-      r = r * -1;
-    }
-    int16_t o = r * cos(2*ft);
-    Serial.print(" t=");
-    Serial.print(ft);
-    Serial.print(" t2=");
-    Serial.print(ft*180.0/3.14);
-    Serial.print(" o=");
-    Serial.println(o);
-    //if (isBetween(y,-10,10)) {
-      //if (xy.x != 0) {
-        //_motors.backward();
-        //_motors.moveAnalog(r, r);
-      //} else if (xy.x < 0) {
-        //_motors.forward();
-        //_motors.moveAnalog(r*-1, r*-1);
-      //} else {
-        //_motors.stop();
-      //}
-    //} else 
-
-    if (xy.y<0) {
-      //_motors.rotateLeft();
-      _motors.moveAnalog(r, o);
-    } else {
-      //_motors.rotateRight();
-      _motors.moveAnalog(o, r);
-    }
 
   }
-
-  //MotorSet& motors() { return _motors; }
 
 private:
   Sonar _sonar;
   MotorSet _motors;
   Servo _servo;
 
-  RandomWalker<Sonar,MotorSet> _walker;
+  WalkerMode _walkerMode = REMOTE_WALKER; 
+
+  RandomWalker<Sonar,MotorSet> _randomWalker;
+  RemoteWalker<Sonar,MotorSet> _remoteWalker;
 
 };
 
