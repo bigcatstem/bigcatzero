@@ -17,16 +17,21 @@ public:
 
   // -2048->2048
   void onControl(int16_t x_, int16_t y_) {
-    /*
+
+    Serial.print("onControl ");
+    Serial.print(x_);
+    Serial.print(",");
+    Serial.println(y_);
+
     if (x_==0 && y_==0) {
       _motors.moveAnalog(0, 0);
     }
 
     if (_isBlocked) {
+      _motors.moveAnalog(0, 0);
       _isBlocked = _sonar.isBlocked();
-      return;
+      //return;
     }
-    */
 
     // -256->256
     int16_t x = x_ / 8;
@@ -68,12 +73,10 @@ public:
 
   void loop() {
 
-    /*
     _isBlocked = _sonar.isBlocked();
     if (_isBlocked) {
       _motors.moveAnalog(-75, -75);
     }
-    */
 
   }
 

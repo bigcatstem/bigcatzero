@@ -29,12 +29,24 @@ using MCU = CAT::PinMap::MCU;
 //auto g = bcstem::GlobalObject::get();
 long _cnt = 0;
 
+
+volatile bool _espNowReceived = false;
+
+constexpr uint8_t MAX_ESPNOW_SIZE = 100;
+uint8_t _espNowReceiveBuffer[MAX_ESPNOW_SIZE];
+int _espNowReceiveLen = 0;
+
 // So that, the handle in CAT can be a normal member function
 // IsEnable
 void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData_, int len_) {
+    Serial.println("onEspNowReceived1");
 
   if constexpr (CAT::isEspNowReceiver) {
-    g_cat.onEspNowReceived(macAddr_, incomingData_, len_);
+    Serial.println("onEspNowReceived2");
+    _espNowReceived = true;
+    _espNowReceiveLen = len_;
+    memcpy(_espNowReceiveBuffer, incomingData_, len_);
+    g_cat.onEspNowReceived(macAddr_, _espNowReceiveBuffer, _espNowReceiveLen);
   }
 }
 
@@ -58,11 +70,13 @@ void setup() {
 
     if constexpr (CAT::isEspNowReceiver)
     {
+      Serial.println("isEspNowReceiver");
       bcstem::setupEspNowReceiver(onEspNowReceived);
     }
 
     if constexpr (CAT::isEspNowSender)
     {
+      Serial.println("isEspNowSender");
       bcstem::setupEspNowSender(CAT::espNowTargetAddr, onEspNowSent);
     }
 
@@ -70,6 +84,10 @@ void setup() {
 
   // I2C
   if constexpr (CAT::needI2C) {
+    Serial.print("needI2C SDA:");
+    Serial.print(PinMap::SDA);
+    Serial.print(" SLC:");
+    Serial.print(PinMap::SLC);
     Wire.begin(PinMap::SDA, PinMap::SLC);
   }
 
@@ -92,7 +110,16 @@ void loop() {
     return;
   }
 
-  //Serial.println(g_sonar.ping());
+  if (_espNowReceived) {
+    noInterrupts();
+    uint8_t buffer[MAX_ESPNOW_SIZE];
+    int len = _espNowReceiveLen;
+    memcpy(buffer, _espNowReceiveBuffer, len);
+    _espNowReceived = false;
+    interrupts();
+    g_cat.onEspNowReceivedAction(buffer, len);
+  }
+
   // cat specific loop
   g_cat.loop();
 

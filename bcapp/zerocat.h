@@ -143,19 +143,21 @@ public:
 
   void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {}
 
-  // callback function that will be executed when data is received
   void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData, int len) {
+  }
 
-    XY16 xy; // -2048 to 2048
-    memcpy(&xy, incomingData, sizeof(xy));
+  // callback function that will be executed when data is received
+  void onEspNowReceivedAction(const uint8_t *espNowReceivedBuffer_, int len_) {
 
-    Serial.print(xy.x);
-    Serial.print(" , ");
-    Serial.println(xy.y);
+    const XY16* pxy = reinterpret_cast<const XY16*>(espNowReceivedBuffer_); // -2048 to 2048
+    //memcpy(&xy, incomingData, sizeof(xy));
 
-    _remoteWalker.onControl(xy.x, xy.y);
+    Serial.print("onEspNowReceivedAction ");
+    Serial.print(pxy->x);
+    Serial.print(",");
+    Serial.println(pxy->y);
 
-
+    _remoteWalker.onControl(pxy->x, pxy->y);
   }
 
 private:
