@@ -7,9 +7,9 @@
 #include <esp_now.h>
 
 // Sensors
+#include "../bcstem/util.h"
 #include "../bcstem/sonar.h"
 #include "../bcstem/motorset.h"
-#include <ESP32Servo.h>
 
 // App
 #include "randomwalker.h"
@@ -22,14 +22,6 @@ struct CFG {
   static const int cmLimit = 20;
   //static const int cmFree = 30;
 };
-
-inline void testServo(Servo& servo_) {
-  for (int i=0;i<179;i+=10) {
-    servo_.write(i);
-    delay(10);
-  }
-  servo_.write(90);
-}
 
 class ZeroCat {
 

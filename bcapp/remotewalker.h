@@ -73,9 +73,20 @@ public:
 
   void loop() {
 
+    bool wasBlocked = _isBlocked;
     _isBlocked = _sonar.isBlocked();
     if (_isBlocked) {
+
       _motors.moveAnalog(-75, -75);
+
+      if (!wasBlocked) {
+        testServo(_servo);
+      }
+
+    }
+
+    if (wasBlocked && !_isBlocked) {
+      _motors.moveAnalog(0, 0);      
     }
 
   }

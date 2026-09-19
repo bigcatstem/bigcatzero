@@ -39,10 +39,14 @@ int _espNowReceiveLen = 0;
 // So that, the handle in CAT can be a normal member function
 // IsEnable
 void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData_, int len_) {
-    Serial.println("onEspNowReceived1");
 
   if constexpr (CAT::isEspNowReceiver) {
-    Serial.println("onEspNowReceived2");
+
+    bcstem::XY16* p = (bcstem::XY16*)incomingData_;
+    Serial.print(p->x);
+    Serial.print(",");
+    Serial.print(p->y);
+
     _espNowReceived = true;
     _espNowReceiveLen = len_;
     memcpy(_espNowReceiveBuffer, incomingData_, len_);

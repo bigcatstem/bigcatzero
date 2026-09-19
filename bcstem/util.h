@@ -5,6 +5,7 @@
 
 #include <Wire.h>
 #include <WiFi.h>
+#include <ESP32Servo.h>
 
 namespace bcstem {
 
@@ -13,6 +14,14 @@ namespace bcstem {
 struct XY16 {
   int16_t x;
   int16_t y;
+
+  XY16() = default;
+
+  XY16(int16_t x_, int y_) : x(x_), y(y_) {}
+
+  XY16(int x_, int y_) :
+    x(static_cast<int16_t>(x_)), y(static_cast<int16_t>(y_))
+  {}
 };
 
 struct GlobalObject {
@@ -52,6 +61,13 @@ struct Stat {
   int max = 0;
   int count = 0;
 
+  void reset () {
+    total = 0;
+    min = 10000;
+    max = 0;
+    count = 0;
+  }
+
   void sample(int pt_) {
     count ++;
     total += pt_;
@@ -60,6 +76,8 @@ struct Stat {
   }
 
   int average() { return total / count; }
+  int averageExclusive() {  return (total - max - min) / (count - 2); }
+
   int derivation() {
     int a = average();
     return max-a > a-min ? max-a : a-min;
@@ -78,6 +96,15 @@ inline void serialEcho()
       Serial.println(input);
     }
   }
+}
+
+// Servo ////////////////////////////////////////////////////////
+inline void testServo(Servo& servo_) {
+  for (int i=0;i<179;i+=10) {
+    servo_.write(i);
+    delay(10);
+  }
+  servo_.write(90);
 }
 
 // ESPNOW ///////////////////////////////////////////////////////

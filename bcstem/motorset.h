@@ -52,10 +52,14 @@ public:
     level_ = level_ >  255?  255 : level_;
     level_ = level_ < -255? -255 : level_;
 
-    int out = MIN_OUTPUT + (MAX_OUTPUT-MIN_OUTPUT) * abs(level_) / MAX_OUTPUT; // always positive
+    int out = map(abs(level_), 1, 255, MIN_OUTPUT, MAX_OUTPUT);
+    //int out = MIN_OUTPUT + (MAX_OUTPUT-MIN_OUTPUT) * abs(level_) / MAX_OUTPUT; // always positive
 
     //if (out > MAX_OUTPUT*0.9) { out = MAX_OUTPUT; }
     if (level_ == 0) { out = 0; }
+    Serial.print("moveAnalogSingle ");
+    Serial.print(level_);
+    Serial.print("->");
     Serial.println(out);
 
     if (level_ > 0 ) {

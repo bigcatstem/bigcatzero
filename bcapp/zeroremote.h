@@ -43,7 +43,9 @@ public:
     Stat xData;
     Stat yData;
     // mid point
-    for (int i=0;i<5000;i++) {
+
+    constexpr int SAMPLE_SIZE = 5000;
+    for (int i=0;i<SAMPLE_SIZE;i++) {
       xData.sample(analogRead(PinMap::VRX));
       yData.sample(analogRead(PinMap::VRY));
     }
@@ -96,13 +98,32 @@ public:
     }
   }
 
-  void loop() {
-    int16_t x = analogRead(PinMap::VRX) - _xCenter;
-    int16_t y = analogRead(PinMap::VRY) - _yCenter;
+  //
+  XY16 getXYFromJoystick() {
+    Stat xs;
+    Stat ys;
 
-    Serial.print(x);
-    Serial.print(" , ");
-    Serial.println(y);
+    constexpr int SAMPLE_SIZE = 10;
+    for  (int i=0;i<SAMPLE_SIZE;i++) {
+      int16_t x = analogRead(PinMap::VRX) - _xCenter;
+      int16_t y = analogRead(PinMap::VRY) - _yCenter;
+      xs.sample(x);
+      ys.sample(y);
+    }
+
+    return XY16 {xs.averageExclusive(), ys.averageExclusive()} ;
+  }
+
+  void loop() {
+
+    XY16 xy = getXYFromJoystick();
+
+    int16_t x = xy.x;
+    int16_t y = xy.y;
+
+    //Serial.print(x);
+    //Serial.print(" , ");
+    //Serial.println(y);
 
     // Special case for center
     if (abs(x) < _xTolerance && abs(y) < _yTolerance) {
@@ -125,6 +146,10 @@ public:
     _lastXY.y = y;
 
     delay(100);
+  }
+
+
+  void onEspNowReceivedAction(const uint8_t *espNowReceivedBuffer_, int len_) {
   }
 
   void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData, int len) {}
