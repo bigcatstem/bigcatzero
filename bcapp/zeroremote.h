@@ -4,6 +4,10 @@
 #include "../bcstem/mcu.h"
 #include "../bcstem/util.h"
 
+#include "zerocatcommon.h"
+
+#include <ezButton.h>
+
 // Range: -2048 to 2048
 // Setup: get center and tolerance
 // Noise filtering
@@ -21,7 +25,7 @@ class ZeroRemote {
 
     static const uint8_t VRX = 4; //
     static const uint8_t VRY = 5; //
-    static const uint8_t SW  = 3; //
+    static const uint8_t SW  = 6; //
 
     static const uint8_t SDA = MCU::SDA; // 8
     static const uint8_t SLC = MCU::SLC; // 9
@@ -31,6 +35,9 @@ class ZeroRemote {
 public:
 
   using PinMap = PinMap4ESP32S3;
+
+  ZeroRemote() : _button(PinMap::SW) {}
+
   static constexpr const uint8_t espNowAddr[] = {0x70, 0xAF, 0x09, 0x0D, 0x35, 0x14};  // ESP32C3 super mini
 
   static constexpr const uint8_t espNowTargetAddr[] = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};
@@ -76,26 +83,27 @@ public:
   }
 
   void sendCenter() {
-    sendXY(0, 0);
+    sendEvent(0, 0);
     _lastAtCenter = true;
   }
 
-  void sendXY(int16_t x_, int16_t y_) {
-    XY16 xy{x_, y_};
+  void sendEvent(int16_t x_, int16_t y_) {
+    JoystickEvent e {x_, y_, _catMode};
 
     // Send message via ESP-NOW
-    esp_err_t result = esp_now_send(espNowTargetAddr, (uint8_t *) &xy, sizeof(xy));
+    esp_err_t result = esp_now_send(espNowTargetAddr, (uint8_t *) &e, sizeof(e));
     
     if (result == ESP_OK) {
-      Serial.print(x_);
-      Serial.print(",");
-      Serial.print(y_);
+      e.print();
       Serial.println(" Sent with success");
       //Serial.println(_lastAtCenter);
     } else {
       Serial.print("Error sending the data. esp_now_send return ");
       Serial.println(result);
     }
+
+    _lastXY.x = x_;
+    _lastXY.y = y_;
   }
 
   //
@@ -114,9 +122,28 @@ public:
     return XY16 {xs.averageExclusive(), ys.averageExclusive()} ;
   }
 
+  bool isButtonNewlyPushed(bool& _wasButtonPushed) {
+    bool isPushed = _button.isPressed();
+    bool yn = false;
+    if (!_wasButtonPushed && isPushed) {
+      yn = true;
+    }
+    _wasButtonPushed = isPushed;
+    return yn;
+  }
+
   void loop() {
 
+    _button.loop();
+
     XY16 xy = getXYFromJoystick();
+
+    if (isButtonNewlyPushed(_wasButtonPushed)) {
+
+      _catMode = _catMode==REMOTE_WALKER? RANDOM_WALKER : REMOTE_WALKER;
+
+      sendEvent(_lastXY.x, _lastXY.y);
+    }
 
     int16_t x = xy.x;
     int16_t y = xy.y;
@@ -140,7 +167,7 @@ public:
       return;
     }
 
-    sendXY(x, y);
+    sendEvent(x, y);
     _lastAtCenter = false;
     _lastXY.x = x;
     _lastXY.y = y;
@@ -163,6 +190,9 @@ public:
   }
 
 private:
+
+  ezButton _button;
+
   XY16 _lastXY;
 
   bool _lastAtCenter = true;
@@ -170,6 +200,10 @@ private:
   int16_t _yCenter;
   int16_t _xTolerance;
   int16_t _yTolerance;
+
+  bool _wasButtonPushed = false;
+
+  CatMode _catMode;
 
 };
 

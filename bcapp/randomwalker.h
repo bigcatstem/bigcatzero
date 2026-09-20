@@ -9,7 +9,7 @@ namespace bcstem {
 template<typename SONAR, typename MOTORSET>
 class RandomWalker {
 
-enum {
+enum Action : uint8_t {
   ACTION_FORWARD = 0,
   ACTION_RIGHT,
   ACTION_LEFT,
@@ -19,7 +19,7 @@ enum {
   ACTION_MAX
 };
 
-enum {
+enum Mode : uint8_t {
   MODE_NORMAL,
   MODE_BLOCKED
 };

@@ -84,6 +84,31 @@ struct Stat {
   }
 };
 
+// Speed ////////////////////////////////////////////////////////
+using Speed = int;       // -255->255
+using ScaledSpeed = int; // -255->255
+
+template <int LOGICAL_MAX, int SCALED_LB, int SCALED_UB>
+class ScaledSpeedMapperT {
+
+public:
+  
+  static ScaledSpeed map(Speed speed_) {
+    if (speed_==0)             { return 0;            }
+    if (speed_>LOGICAL_MAX)    { return SCALED_UB;    }
+    if (speed_<LOGICAL_MAX*-1) { return SCALED_UB*-1; }
+
+    if (speed_>0) {
+      return ::map(speed_,    1, LOGICAL_MAX, SCALED_LB, SCALED_UB);
+    } else {
+      return ::map(speed_*-1, 1, LOGICAL_MAX, SCALED_LB, SCALED_UB) * -1;
+    }
+  }
+
+  static ScaledSpeed mid() { return (SCALED_LB+SCALED_UB)/2; }
+
+};
+
 // SERIAL ///////////////////////////////////////////////////////
 
 inline void serialEcho() 
@@ -106,6 +131,7 @@ inline void testServo(Servo& servo_) {
   }
   servo_.write(90);
 }
+
 
 // ESPNOW ///////////////////////////////////////////////////////
 
@@ -206,7 +232,8 @@ inline void scanI2C() {
     Wire.beginTransmission(address);
 
     byte error = Wire.endTransmission();
-    Serial.println(address);
+    Serial.print("scan ");
+    Serial.print(address);
 
     if (error == 0)
     {
@@ -215,6 +242,8 @@ inline void scanI2C() {
         Serial.print("0");
       }
       Serial.println(address, HEX);
+    } else {
+      Serial.println(" not found");
     }
   }  
 }

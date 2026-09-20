@@ -25,6 +25,7 @@ public:
 
     if (x_==0 && y_==0) {
       _motors.moveAnalog(0, 0);
+      return;
     }
 
     if (_isBlocked) {
@@ -96,6 +97,8 @@ private:
   SONAR& _sonar;
   MOTORSET& _motors;
   Servo& _servo;
+
+  CatMode _catMode;
 
   bool _isBlocked = false;
 

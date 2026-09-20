@@ -68,6 +68,7 @@ public:
   // return TIMEOUT if timeout
   // return distance in cm
   int ping() {
+
     int cm =  _53L0.readRangeSingleMillimeters() / 10;
 
     if (_53L0.timeoutOccurred()) { 

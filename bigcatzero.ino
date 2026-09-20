@@ -5,14 +5,8 @@
 Done:
   - avoid D15 / D5
 TODO:
-  - Joystick button
   - Better natural reaction from joystick to motor 
 */
-
-//#include <Wire.h>
-
-// Util
-#include "bcstem/util.h"
 
 // App
 #include "bcapp/zerocat.h"
@@ -20,15 +14,17 @@ TODO:
 
 using CAT = bcstem::ZeroCat;
 //using CAT = bcstem::ZeroRemote;
-CAT g_cat;
 
 //using namespace bcstem;
 using PinMap = CAT::PinMap;
 using MCU = CAT::PinMap::MCU;
 
+namespace bcstem {
+
+CAT g_cat;
+
 //auto g = bcstem::GlobalObject::get();
 long _cnt = 0;
-
 
 volatile bool _espNowReceived = false;
 
@@ -42,10 +38,10 @@ void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData_, in
 
   if constexpr (CAT::isEspNowReceiver) {
 
-    bcstem::XY16* p = (bcstem::XY16*)incomingData_;
-    Serial.print(p->x);
-    Serial.print(",");
-    Serial.print(p->y);
+    if (len_ > MAX_ESPNOW_SIZE) {
+      Serial.println("onEspNowReceived too big");
+      len_ = MAX_ESPNOW_SIZE;
+    }
 
     _espNowReceived = true;
     _espNowReceiveLen = len_;
@@ -59,6 +55,8 @@ void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {
     g_cat.onEspNowSent(macAddr_, status);
   }
 }
+
+};
 
 void setup() {
   Serial.begin(MCU::bandRate);
@@ -75,13 +73,13 @@ void setup() {
     if constexpr (CAT::isEspNowReceiver)
     {
       Serial.println("isEspNowReceiver");
-      bcstem::setupEspNowReceiver(onEspNowReceived);
+      bcstem::setupEspNowReceiver(bcstem::onEspNowReceived);
     }
 
     if constexpr (CAT::isEspNowSender)
     {
       Serial.println("isEspNowSender");
-      bcstem::setupEspNowSender(CAT::espNowTargetAddr, onEspNowSent);
+      bcstem::setupEspNowSender(CAT::espNowTargetAddr, bcstem::onEspNowSent);
     }
 
   }
@@ -91,41 +89,51 @@ void setup() {
     Serial.print("needI2C SDA:");
     Serial.print(PinMap::SDA);
     Serial.print(" SLC:");
-    Serial.print(PinMap::SLC);
-    Wire.begin(PinMap::SDA, PinMap::SLC);
+    Serial.println(PinMap::SLC);
+    if (Wire.begin(PinMap::SDA, PinMap::SLC)) {
+      Serial.println("I2C initialized");
+    } else {
+      bcstem::GlobalObject()::failSetup();
+      Serial.println("I2C initialization failed");
+    }
   }
 
   // cat specific setup
-  g_cat.setup();
+  bcstem::g_cat.setup();
 
   // End setup
   Serial.println(bcstem::GlobalObject::get().errorLog);
+
+  //bcstem::scanI2C();
+
 
 }
 
 void loop() {
 
   //Serial.println("::loop");
-  //_cnt++;
+  bcstem::_cnt++;
   //Serial.println(_cnt);
 
   if (!bcstem::GlobalObject::get().setupPassed()) {
-    Serial.println("setup is not passed");
+    if (bcstem::_cnt==1) {
+      Serial.println("setup is not passed");
+    }
     return;
   }
 
-  if (_espNowReceived) {
+  if (bcstem::_espNowReceived) {
     noInterrupts();
-    uint8_t buffer[MAX_ESPNOW_SIZE];
-    int len = _espNowReceiveLen;
-    memcpy(buffer, _espNowReceiveBuffer, len);
-    _espNowReceived = false;
+    uint8_t buffer[bcstem::MAX_ESPNOW_SIZE];
+    int len = bcstem::_espNowReceiveLen;
+    memcpy(buffer, bcstem::_espNowReceiveBuffer, len);
+    bcstem::_espNowReceived = false;
     interrupts();
-    g_cat.onEspNowReceivedAction(buffer, len);
+    bcstem::g_cat.onEspNowReceivedAction(buffer, len);
   }
 
   // cat specific loop
-  g_cat.loop();
+  bcstem::g_cat.loop();
 
 /*
   if (g_timerServo.fired(currentMs))
@@ -138,4 +146,8 @@ void loop() {
   //if (_cnt%100000==0) {
   //  Serial.println(_cnt);
   //}
+
+  //Serial.println("::loop end");
+
 }
+

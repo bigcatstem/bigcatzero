@@ -12,15 +12,28 @@
 #include "../bcstem/motorset.h"
 
 // App
+#include "zerocatcommon.h"
 #include "randomwalker.h"
 #include "remotewalker.h"
 
 namespace bcstem {
 
 struct CFG {
-  static const int sonarSensitivity = 1;
-  static const int cmLimit = 20;
-  //static const int cmFree = 30;
+
+  struct Sonar {
+    static constexpr int Sensitivity = 1;
+    static constexpr int cmLimit = 20;
+    //static const int cmFree = 30;
+  };
+
+  struct Motor {
+    static constexpr int LOGICAL_MAX = 255;
+    static constexpr int SCALED_LB   = 160; // Min value for the motor to move 
+    static constexpr int SCALED_UB   = 255;
+    static constexpr uint32_t PWM_FREQUENCY = 20000;
+    static constexpr uint8_t PWM_RESOLUTION = 8;
+  };
+
 };
 
 class ZeroCat {
@@ -66,7 +79,6 @@ class ZeroCat {
     static const uint8_t SDA   = MCU::SDA; // 21;  // GREY 
     static const uint8_t SLC   = MCU::SLC; // 22;  // PURPLE
 
-
     // MAC Address: b0:cb:d8:c6:52:04
   };
 
@@ -85,22 +97,20 @@ public:
   //using Sonar = SonarT<PinMap::ECHO, PinMap::TRIG>;
   //using Sonar = Sonar6180;
   using Sonar = Sonar53L0;
-
-  //using MotorSet = MotorSetT<PinMap::FL1, PinMap::FL2, PinMap::FR1, PinMap::FR2,
-  //                          PinMap::BL1, PinMap::BL2, PinMap::BR1, PinMap::BR2>;
-  using MotorSet = MotorSetT<PinMap::MotorL1, PinMap::MotorL2,
-        PinMap::MotorR1, PinMap::MotorR2>;
-
-  enum WalkerMode {
-    RANDOM_WALKER = 0,
-    REMOTE_WALKER
-  };
+ 
+  using MotorSet = MotorSetT<
+    PinMap::MotorL1, 
+    PinMap::MotorL2,
+    PinMap::MotorR1, 
+    PinMap::MotorR2,
+    CFG
+  >;
 
   ZeroCat() : 
     _randomWalker(_sonar, _motors, _servo),
-    _remoteWalker(_sonar, _motors, _servo)
+    _remoteWalker(_sonar, _motors, _servo),
+    _catMode(REMOTE_WALKER)
   {
-    _walkerMode = REMOTE_WALKER;
   }
 
   void setup() {
@@ -111,18 +121,18 @@ public:
     _servo.attach(PinMap::SERVO);
     _servo.write(90);
     _motors.setup();
-    _sonar.setup(CFG::sonarSensitivity, CFG::cmLimit);
+    _sonar.setup(CFG::Sonar::Sensitivity, CFG::Sonar::cmLimit);
     _randomWalker.setup();
     _remoteWalker.setup();
 
     testServo(_servo);
-    //scanI2C();
     //g_timerServo.start();
   }
 
   void loop() {
+    //Serial.println("zerocat::loop");
 
-    switch(_walkerMode) {
+    switch(_catMode) {
       case REMOTE_WALKER:
         _remoteWalker.loop();
       break;
@@ -131,25 +141,41 @@ public:
       break;
     }
 
+    //Serial.println("zerocat::loop end");
   }
 
   void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {}
 
-  void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData, int len) {
+  void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData_, int len_) {
+    if (len_!= sizeof(JoystickEvent)) {
+      Serial.println("onEspNowReceived: Invalid JoystickEvent");
+    }
+
+    bcstem::JoystickEvent* p = (bcstem::JoystickEvent*)incomingData_;
+    Serial.print("onEspNowReceived ");
+    p->println();
   }
 
   // callback function that will be executed when data is received
-  void onEspNowReceivedAction(const uint8_t *espNowReceivedBuffer_, int len_) {
+  void onEspNowReceivedAction(const uint8_t* espNowReceivedBuffer_, int len_) {
 
-    const XY16* pxy = reinterpret_cast<const XY16*>(espNowReceivedBuffer_); // -2048 to 2048
+    const JoystickEvent* pEvent = reinterpret_cast<const JoystickEvent*>(espNowReceivedBuffer_); // -2048 to 2048
     //memcpy(&xy, incomingData, sizeof(xy));
 
     Serial.print("onEspNowReceivedAction ");
-    Serial.print(pxy->x);
-    Serial.print(",");
-    Serial.println(pxy->y);
+    pEvent->println();
 
-    _remoteWalker.onControl(pxy->x, pxy->y);
+    if (_catMode!=pEvent->catMode) {
+      _catMode = pEvent->catMode;
+
+      if (_catMode==RANDOM_WALKER) {
+        _randomWalker.normalAction();
+      }
+    }
+
+    //if (_catMode==REMOTE_WALKER) {
+    _remoteWalker.onControl(pEvent->x, pEvent->y);
+    //}
   }
 
 private:
@@ -157,14 +183,10 @@ private:
   MotorSet _motors;
   Servo _servo;
 
-  WalkerMode _walkerMode = REMOTE_WALKER; 
-
   RandomWalker<Sonar,MotorSet> _randomWalker;
   RemoteWalker<Sonar,MotorSet> _remoteWalker;
+  CatMode _catMode; 
 
 };
-
-
-
 
 } // bcstem
