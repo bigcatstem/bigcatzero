@@ -12,10 +12,9 @@ TODO:
 #include "bcapp/zerocat.h"
 #include "bcapp/zeroremote.h"
 
-using CAT = bcstem::ZeroCat;
-//using CAT = bcstem::ZeroRemote;
+//using CAT = bcstem::ZeroCat;
+using CAT = bcstem::ZeroRemote;
 
-//using namespace bcstem;
 using PinMap = CAT::PinMap;
 using MCU = CAT::PinMap::MCU;
 
@@ -93,7 +92,7 @@ void setup() {
     if (Wire.begin(PinMap::SDA, PinMap::SLC)) {
       Serial.println("I2C initialized");
     } else {
-      bcstem::GlobalObject()::failSetup();
+      bcstem::GlobalObject::failSetup();
       Serial.println("I2C initialization failed");
     }
   }

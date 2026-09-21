@@ -8,7 +8,6 @@ namespace bcstem {
 // 7c:4f:ad:b6:0d:ec // ESP32S3
 
 struct ESP32C3Zero {
-
 /*
 5V 
 GND 
@@ -28,13 +27,19 @@ GPIO5
 GP104 
 GPIO3 
 */
-
   static const bool needDelayForSerialSetup = true;
   static const long bandRate = 115200;
   static const uint8_t SDA = 8;
   static const uint8_t SLC = 9;
 
   // MAC Address: b0:cb:d8:c6:52:04
+};
+
+struct ESP32C3 {
+  static const bool needDelayForSerialSetup = true;
+  static const long bandRate = 115200;
+  static const uint8_t SDA = -1;
+  static const uint8_t SLC = -1;
 };
 
 struct ESP32S {

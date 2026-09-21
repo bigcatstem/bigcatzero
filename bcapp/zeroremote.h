@@ -22,19 +22,33 @@ class ZeroRemote {
 
   struct PinMap4ESP32S3 {
     using MCU = ESP32S3;
-
     static const uint8_t VRX = 4; //
     static const uint8_t VRY = 5; //
     static const uint8_t SW  = 6; //
-
     static const uint8_t SDA = MCU::SDA; // 8
     static const uint8_t SLC = MCU::SLC; // 9
 
+
   };
+
+  struct PinMap4ESP32C3 {
+    using MCU = ESP32C3;
+    static const uint8_t VRX = 4; //
+    static const uint8_t VRY = 3; //
+    static const uint8_t SW  = 2; //
+    static const uint8_t SDA = MCU::SDA; // -1
+    static const uint8_t SLC = MCU::SLC; // -1
+
+    static const uint8_t LED_B = 21; //
+    static const uint8_t LED_G = 20; //
+    static const uint8_t LED_R = 10; //
+  };
+
 
 public:
 
-  using PinMap = PinMap4ESP32S3;
+  //using PinMap = PinMap4ESP32S3;
+  using PinMap = PinMap4ESP32C3;
 
   ZeroRemote() : _button(PinMap::SW) {}
 
@@ -78,6 +92,19 @@ public:
 
   void setup() {
     Serial.println("ZeroRemote::setup()");
+
+    uint8_t pins[] = {PinMap::LED_R, PinMap::LED_G, PinMap::LED_B};
+    for (auto pin: pins){
+      int32_t f = 5000;
+      int8_t res = 8;
+      ledcAttach(pin, f, res);
+      //pinMode(pin, OUTPUT);
+    }
+
+    analogWrite(PinMap::LED_R, 127);
+    analogWrite(PinMap::LED_G, 127);
+    analogWrite(PinMap::LED_B, 127);
+
 
     setCenter();
   }
@@ -147,10 +174,32 @@ public:
 
     int16_t x = xy.x;
     int16_t y = xy.y;
+    
+    float pi = 3.14;
+    float a = atan(abs(y)/abs(x));
+    if (x>=0 && y>=0) {
+      a = a;
+    }  else if (x<0 && y>=0) {
+      a = a + pi/2;
+    }  else if (x<0 && y<0) {
+      a = a + pi;
+    }  else  {
+      a = a + pi*3/2;
+    }
+    int l = sqrt( x*x/64 + y*y/64 );
+    l = l * 0.4 / 2;
+    int r = (l) * (sin(a)       +1)   ;
+    int g = (l) * (sin(a+pi*2/3)+1) ;
+    int b = (l) * (sin(a+pi*4/3)+1) ;
+    analogWrite(PinMap::LED_R, r);
+    analogWrite(PinMap::LED_G, g);
+    analogWrite(PinMap::LED_B, b);
 
-    //Serial.print(x);
-    //Serial.print(" , ");
-    //Serial.println(y);
+    Serial.print(r);
+    Serial.print(" , ");
+    Serial.println(g);
+    Serial.print(" , ");
+    Serial.println(b);
 
     // Special case for center
     if (abs(x) < _xTolerance && abs(y) < _yTolerance) {
@@ -166,6 +215,8 @@ public:
       delay(100);
       return;
     }
+
+
 
     sendEvent(x, y);
     _lastAtCenter = false;
