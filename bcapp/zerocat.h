@@ -21,6 +21,7 @@ namespace bcstem {
 struct CFG {
 
   struct Sonar {
+    static constexpr bool enable = false;
     static constexpr int Sensitivity = 1;
     static constexpr int cmLimit = 20;
     //static const int cmFree = 30;
@@ -82,21 +83,64 @@ class ZeroCat {
     // MAC Address: b0:cb:d8:c6:52:04
   };
 
+  struct PinMap_ESP32S_HW394 {
+    using MCU = ESP32S;
+
+  /*
+    3V3
+    GND BLACK
+    D15 BLUE      ECHO
+    D2  GREEN     L-IN1
+    D4  YELLOW    L-IN2 
+    D16 ORANGE    R-IN4
+    D17 RED       R-IN3
+    D5  BROWN     // Pin 5 is already attached to LEDC
+    D18 BLACK     // Pin 18 is already attached to LEDC (channel 0, resolution 10)
+    D19 WHITE     TRIG
+    D21 GREY      SDA 
+    RX0
+    TX0
+    D22 GREEN (DUPLICTED) SCL
+    D23 YELLOW    SERVO
+  */
+
+    static const uint8_t FL2 = 33; //2;
+    static const uint8_t FL1 = 32; //4;
+    static const uint8_t MotorL1 = FL1;
+    static const uint8_t MotorL2 = FL2;
+    //static const int BL1 = 22;       // L-IN3 PURPLE
+    //static const int BL2 = 21;       // L-IN4 GREY
+    //static const int FR1 = 18;       // R-IN2 BLACK
+    //static const int FR2 = 19;       // R-IN1 WHITE
+    static const uint8_t BR1 = 26; //16;
+    static const uint8_t BR2 = 27; //17;
+    static const uint8_t MotorR1 = BR1;
+    static const uint8_t MotorR2 = BR2;
+    static const uint8_t ECHO = 15; //
+    static const uint8_t TRIG = 19; //
+    static const uint8_t SERVO = 23; //
+    static const uint8_t SDA   = MCU::SDA; // 21;  // GREY 
+    static const uint8_t SLC   = MCU::SLC; // 22;  // PURPLE
+
+    // MAC Address: b0:cb:d8:c6:52:04
+    //{0x20, 0x50, 0x0d, 0x33, 0xf3, 0x10}
+  };
+
 public:
 
-  using PinMap = PinMap4ESP32S;
+  using PinMap = PinMap_ESP32S_HW394; //PinMap4ESP32S;
   using MCU = PinMap::MCU;
 
-  static constexpr const uint8_t espNowAddr[] = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};  // ESP32S
+  //static constexpr const uint8_t espNowAddr[] = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};  // ESP32S
   static constexpr const uint8_t espNowTargetAddr[] = {0, 0, 0, 0, 0, 0};
 
-  static constexpr bool needI2C = true;
+  static constexpr bool needI2C = CFG::Sonar::enable;
   static constexpr bool isEspNowReceiver = true;
   static constexpr bool isEspNowSender = false;
 
   //using Sonar = SonarT<PinMap::ECHO, PinMap::TRIG>;
   //using Sonar = Sonar6180;
-  using Sonar = Sonar53L0;
+  using Sonar = Sonar53L0<CFG>;
  
   using MotorSet = MotorSetT<
     PinMap::MotorL1, 
@@ -183,8 +227,8 @@ private:
   MotorSet _motors;
   Servo _servo;
 
-  RandomWalker<Sonar,MotorSet> _randomWalker;
-  RemoteWalker<Sonar,MotorSet> _remoteWalker;
+  RandomWalker<CFG, Sonar,MotorSet> _randomWalker;
+  RemoteWalker<CFG, Sonar,MotorSet> _remoteWalker;
   CatMode _catMode; 
 
 };

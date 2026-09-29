@@ -6,7 +6,7 @@
 
 namespace bcstem {
 
-template<typename SONAR, typename MOTORSET>
+template<typename CFG, typename SONAR, typename MOTORSET>
 class RandomWalker {
 
 enum Action : uint8_t {

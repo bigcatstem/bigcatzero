@@ -54,7 +54,9 @@ public:
 
   static constexpr const uint8_t espNowAddr[] = {0x70, 0xAF, 0x09, 0x0D, 0x35, 0x14};  // ESP32C3 super mini
 
-  static constexpr const uint8_t espNowTargetAddr[] = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04};
+  //static constexpr const uint8_t espNowTargetAddr[] = {0xB0, 0xCB, 0xD8, 0xC6, 0x52, 0x04}; // ESP32S
+
+  static constexpr const uint8_t espNowTargetAddr[] = {0x20, 0x50, 0x0d, 0x33, 0xf3, 0x10}; // ESP32S HW394
 
   static constexpr bool needI2C = false;
   static constexpr bool isEspNowReceiver = false;

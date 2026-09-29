@@ -49,6 +49,7 @@ protected:
   int _cmLimit;
 };
 
+template <typename CFG>
 class Sonar53L0 : public SonarBase {
 
 public: 
@@ -56,18 +57,24 @@ public:
     SonarBase::setup(sensitivity_, cmLimit_);
     //Wire.begin(SDA, SLC);
 
-    if(!bcstem::testI2CAddress(0x29)) {
-      GlobalObject::failSetup();
-    }
+    if constexpr (CFG::Sonar::enable) {
 
-    if (!_53L0.init()) {
-      GlobalObject::failSetup();
+      if(!bcstem::testI2CAddress(0x29)) {
+        GlobalObject::failSetup();
+      }
+
+      if (!_53L0.init()) {
+        GlobalObject::failSetup();
+      }
     }
   }  
 
   // return TIMEOUT if timeout
   // return distance in cm
   int ping() {
+    if constexpr (!CFG::Sonar::enable) {
+      return TIMEOUT;
+    }
 
     int cm =  _53L0.readRangeSingleMillimeters() / 10;
 

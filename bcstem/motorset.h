@@ -30,7 +30,7 @@ public:
       //pinMode(pin, OUTPUT);
     }
 
-    _defaultSpeed = ScaledSpeedMapper::mid();
+    _defaultSpeed = 255;//ScaledSpeedMapper::mid();
 
     stop();
   }
