@@ -104,15 +104,15 @@ class ZeroCat {
     D23 YELLOW    SERVO
   */
 
-    static const uint8_t FL2 = 33; //2;
-    static const uint8_t FL1 = 32; //4;
+    static const uint8_t FL2 = 26; //2;
+    static const uint8_t FL1 = 25; //4;
     static const uint8_t MotorL1 = FL1;
     static const uint8_t MotorL2 = FL2;
     //static const int BL1 = 22;       // L-IN3 PURPLE
     //static const int BL2 = 21;       // L-IN4 GREY
     //static const int FR1 = 18;       // R-IN2 BLACK
     //static const int FR2 = 19;       // R-IN1 WHITE
-    static const uint8_t BR1 = 26; //16;
+    static const uint8_t BR1 = 14; //16;
     static const uint8_t BR2 = 27; //17;
     static const uint8_t MotorR1 = BR1;
     static const uint8_t MotorR2 = BR2;
