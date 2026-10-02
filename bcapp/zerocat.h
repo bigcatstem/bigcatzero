@@ -29,7 +29,7 @@ struct CFG {
 
   struct Motor {
     static constexpr int LOGICAL_MAX = 255;
-    static constexpr int SCALED_LB   = 160; // Min value for the motor to move 
+    static constexpr int SCALED_LB   = 150; // Min value for the motor to move 
     static constexpr int SCALED_UB   = 255;
     static constexpr uint32_t PWM_FREQUENCY = 20000;
     static constexpr uint8_t PWM_RESOLUTION = 8;
