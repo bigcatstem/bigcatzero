@@ -95,13 +95,17 @@ public:
   void setup() {
     Serial.println("ZeroRemote::setup()");
 
-    uint8_t pins[] = {PinMap::LED_R, PinMap::LED_G, PinMap::LED_B};
-    for (auto pin: pins){
-      int32_t f = 5000;
-      int8_t res = 8;
+    constexpr uint32_t f = 5000;
+    constexpr uint8_t res = 8;
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+    constexpr uint8_t pins[] = {PinMap::LED_R, PinMap::LED_G, PinMap::LED_B};
+    for (auto pin: pins) {
       ledcAttach(pin, f, res);
-      //pinMode(pin, OUTPUT);
     }
+#else
+    analogWriteFrequency(f);
+    analogWriteResolution(res);
+#endif
 
     analogWrite(PinMap::LED_R, 127);
     analogWrite(PinMap::LED_G, 127);
@@ -142,8 +146,27 @@ public:
 
     constexpr int SAMPLE_SIZE = 10;
     for  (int i=0;i<SAMPLE_SIZE;i++) {
-      int16_t x = analogRead(PinMap::VRX) - _xCenter;
-      int16_t y = analogRead(PinMap::VRY) - _yCenter;
+
+      int16_t x0 = analogRead(PinMap::VRX);
+      int16_t y0 = analogRead(PinMap::VRY);
+      int16_t x;
+      int16_t y;
+      if (x0 > _xCenter) {
+        x = map(x0, _xCenter, 4095, 0, 2048);
+      } else {
+        x = map(x0, _xCenter, 0, 0, -2048);
+      }
+
+      if (y0 > _yCenter) {
+        y = map(y0, _yCenter, 4095, 0, 2048);
+      } else {
+        y = map(y0, _yCenter, 0, 0, -2048);
+      }
+
+      //Serial.print(x0);
+      //Serial.print(",");
+      //Serial.println(y0);
+      //return XY16 {x, y} ;
       xs.sample(x);
       ys.sample(y);
     }
@@ -197,24 +220,24 @@ public:
     analogWrite(PinMap::LED_G, g);
     analogWrite(PinMap::LED_B, b);
 
-    Serial.print(r);
-    Serial.print(" , ");
-    Serial.println(g);
-    Serial.print(" , ");
-    Serial.println(b);
+    //Serial.print(r);
+    //Serial.print(" , ");
+    //Serial.println(g);
+    //Serial.print(" , ");
+    //Serial.println(b);
 
     // Special case for center
     if (abs(x) < _xTolerance && abs(y) < _yTolerance) {
       if (!_lastAtCenter) {
         sendCenter();
       }
-      delay(100);
+      delay(50);
       return;
     }
 
     if (delta(_lastXY.x, x) < _xTolerance && delta(_lastXY.y, y) < _yTolerance ) {
-      Serial.println("Filtered");
-      delay(100);
+      //Serial.print(".");
+      delay(50);
       return;
     }
 
@@ -236,9 +259,16 @@ public:
 
   // callback when data is sent
   void onEspNowSent(const uint8_t * macAddr_, esp_now_send_status_t status) {
-    Serial.print("\r\nLast Packet Send Status:");
-    Serial.print(status);
-    Serial.println(status == ESP_NOW_SEND_SUCCESS ? " Delivery Success" : " Delivery Fail");
+    if (status == ESP_NOW_SEND_SUCCESS) {
+      //Serial.println("Delivery Success");
+    } else {
+      Serial.print("Last Packet Send Status:");
+      Serial.print(status);
+      Serial.println("Delivery Fail");
+    }
+    //Serial.print("\r\nLast Packet Send Status:");
+    //Serial.print(status);
+    //Serial.println(status == ESP_NOW_SEND_SUCCESS ? " Delivery Success" : " Delivery Fail");
 
   }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 #include <esp_wifi.h>
 #include <esp_now.h>
 
@@ -58,13 +60,13 @@ inline int delta(int x_, int y_) {
 struct Stat {
   long total = 0;
   int min = 10000;
-  int max = 0;
+  int max = -10000;
   int count = 0;
 
   void reset () {
     total = 0;
     min = 10000;
-    max = 0;
+    max = -10000;
     count = 0;
   }
 
@@ -166,7 +168,6 @@ inline void printLocalEspNowAddress() {
 inline bool setupEspNow() {
   WiFi.mode(WIFI_STA);
   esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
-  WiFi.STA.begin();
   printLocalEspNowAddress();
 
   // Init ESP-NOW

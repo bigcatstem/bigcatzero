@@ -7,7 +7,7 @@ namespace bcstem {
 template<int FL1, int FL2, int FR1, int FR2, typename CFG>
 class MotorSetT {
 
-using MCFG = CFG::Motor;
+using MCFG = typename CFG::Motor;
 
 using ScaledSpeedMapper = ScaledSpeedMapperT<MCFG::LOGICAL_MAX, MCFG::SCALED_LB, MCFG::SCALED_UB>;
 
@@ -21,14 +21,15 @@ public:
 
   void setup() {
     Serial.println("MotorSetT::setup");
-    const int pins[] = {
-      FL1, FL2, FR1, FR2
-    };
-
-    for (auto pin: pins){
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+    constexpr int pins[] = {FL1, FL2, FR1, FR2};
+    for (auto pin: pins) {
       ledcAttach(pin, MCFG::PWM_FREQUENCY, MCFG::PWM_RESOLUTION);
-      //pinMode(pin, OUTPUT);
     }
+#else
+    analogWriteFrequency(MCFG::PWM_FREQUENCY);
+    analogWriteResolution(MCFG::PWM_RESOLUTION);
+#endif
 
     _defaultSpeed = 255;//ScaledSpeedMapper::mid();
 
@@ -53,10 +54,10 @@ public:
 
     ScaledSpeed scaled = ScaledSpeedMapper::map(speed_);
 
-    Serial.print("moveAnalogSingle ");
-    Serial.print(speed_);
-    Serial.print("->");
-    Serial.println(scaled);
+    //Serial.print("moveAnalogSingle ");
+    //Serial.print(speed_);
+    //Serial.print("->");
+    //Serial.println(scaled);
 
     if (scaled > 0 ) {
       analogWrite(pin1_, scaled);
