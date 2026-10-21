@@ -196,8 +196,8 @@ public:
     }
 
     bcstem::JoystickEvent* p = (bcstem::JoystickEvent*)incomingData_;
-    Serial.print("onEspNowReceived ");
-    p->println();
+    //Serial.print("onEspNowReceived ");
+    //p->println();
   }
 
   // callback function that will be executed when data is received
@@ -206,8 +206,8 @@ public:
     const JoystickEvent* pEvent = reinterpret_cast<const JoystickEvent*>(espNowReceivedBuffer_); // -2048 to 2048
     //memcpy(&xy, incomingData, sizeof(xy));
 
-    Serial.print("onEspNowReceivedAction ");
-    pEvent->println();
+    //Serial.print("onEspNowReceivedAction ");
+    //pEvent->println();
 
     if (_catMode!=pEvent->catMode) {
       _catMode = pEvent->catMode;

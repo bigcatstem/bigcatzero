@@ -54,10 +54,10 @@ public:
 
     ScaledSpeed scaled = ScaledSpeedMapper::map(speed_);
 
-    //Serial.print("moveAnalogSingle ");
-    //Serial.print(speed_);
-    //Serial.print("->");
-    //Serial.println(scaled);
+    Serial.print("moveAnalogSingle ");
+    Serial.print(speed_);
+    Serial.print("->");
+    Serial.println(scaled);
 
     if (scaled > 0 ) {
       analogWrite(pin1_, scaled);

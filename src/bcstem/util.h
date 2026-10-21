@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <limits>
 
 #include <esp_wifi.h>
 #include <esp_now.h>
@@ -59,14 +60,14 @@ inline int delta(int x_, int y_) {
 
 struct Stat {
   long total = 0;
-  int min = 10000;
-  int max = -10000;
+  int min = std::numeric_limits<int>::max();
+  int max = std::numeric_limits<int>::lowest();
   int count = 0;
 
   void reset () {
     total = 0;
-    min = 10000;
-    max = -10000;
+    min = std::numeric_limits<int>::max();
+    max = std::numeric_limits<int>::lowest();
     count = 0;
   }
 

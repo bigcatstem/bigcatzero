@@ -228,17 +228,22 @@ public:
 
     // Special case for center
     if (abs(x) < _xTolerance && abs(y) < _yTolerance) {
-      if (!_lastAtCenter) {
+      if (!_lastAtCenter || _lastCounter++ > 100) {
+        _lastCounter = 0;
         sendCenter();
       }
-      delay(50);
+      delay(5);
       return;
     }
 
     if (delta(_lastXY.x, x) < _xTolerance && delta(_lastXY.y, y) < _yTolerance ) {
-      //Serial.print(".");
-      delay(50);
-      return;
+      //Serial.print("."); // Filter out noise
+      if (_lastCounter++ > 100) {
+        _lastCounter = 0;
+      } else {
+        delay(5);
+        return;
+      }
     }
 
 
@@ -283,6 +288,7 @@ private:
   int16_t _yCenter;
   int16_t _xTolerance;
   int16_t _yTolerance;
+  int _lastCounter = 0;
 
   bool _wasButtonPushed = false;
 
