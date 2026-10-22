@@ -122,6 +122,7 @@ public:
 
   void sendEvent(int16_t x_, int16_t y_) {
     JoystickEvent e {x_, y_, _catMode};
+    e.seq = _espNowSeq++;
 
     // Send message via ESP-NOW
     esp_err_t result = esp_now_send(espNowTargetAddr, (uint8_t *) &e, sizeof(e));
@@ -228,7 +229,7 @@ public:
 
     // Special case for center
     if (abs(x) < _xTolerance && abs(y) < _yTolerance) {
-      if (!_lastAtCenter || _lastCounter++ > 100) {
+      if (!_lastAtCenter || _lastCounter++ > 1000) {
         _lastCounter = 0;
         sendCenter();
       }
@@ -238,15 +239,13 @@ public:
 
     if (delta(_lastXY.x, x) < _xTolerance && delta(_lastXY.y, y) < _yTolerance ) {
       //Serial.print("."); // Filter out noise
-      if (_lastCounter++ > 100) {
+      if (_lastCounter++ > 1000) {
         _lastCounter = 0;
       } else {
         delay(5);
         return;
       }
     }
-
-
 
     sendEvent(x, y);
     _lastAtCenter = false;
@@ -292,8 +291,9 @@ private:
 
   bool _wasButtonPushed = false;
 
-  CatMode _catMode;
+  CatMode _catMode = REMOTE_WALKER;
 
+  uint16_t _espNowSeq = 0;
 };
 
 } // bcstem

@@ -195,7 +195,7 @@ public:
       Serial.println("onEspNowReceived: Invalid JoystickEvent");
     }
 
-    bcstem::JoystickEvent* p = (bcstem::JoystickEvent*)incomingData_;
+    //bcstem::JoystickEvent* p = (bcstem::JoystickEvent*)incomingData_;
     //Serial.print("onEspNowReceived ");
     //p->println();
   }

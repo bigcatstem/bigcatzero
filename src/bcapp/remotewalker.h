@@ -41,24 +41,42 @@ public:
     float fy = abs(y);
     float fx = abs(x);
     float ft = atan(fy/fx);
-    int32_t r = sqrt (fx*fx + fy*fy);
-    if (x_ > 0) {
-      r = r * -1;
-    }
-    int16_t o = r * cos(2*ft);
 
-    if (x_>=0) {
-      if (y_<=0) {
-        _motors.moveAnalog(o, r);
-      } else {
-        _motors.moveAnalog(r, o);
-      }
-    } else {
-      if (y_<=0) {
-        _motors.moveAnalog(r, o);
-      } else {
-        _motors.moveAnalog(o, r);
-      }
+    uint8_t q = 0;
+    const float pi = 3.14;
+    if (x>0 && y>=0) {
+      ft = ft;
+      q = 1;
+    } else if (x<=0 && y>0) {
+      ft = pi - ft;
+      q = 2;
+    } else if (x<0 && y<=0) {
+      ft = pi + ft;
+      q = 3;
+    } else if (x>=0 && y<0) {
+      ft = 2*pi - ft;
+      q = 4;
+    }
+    
+    int32_t r = sqrt (fx*fx + fy*fy);
+    int16_t o = r * cos(2*(ft-3.14/2));
+
+    /*
+    Serial.print("onControl ");
+    Serial.print(ft*180/3.14);Serial.print(" ");
+    Serial.print(r);Serial.print(" ");
+    Serial.print(o);Serial.print(" ");
+    Serial.println(q);
+    */
+
+    if (q==1) {
+      _motors.moveAnalog(r, o);
+    } else if (q==2) {
+      _motors.moveAnalog(o, r);
+    } else if (q==3) {
+      _motors.moveAnalog(r*-1, o*-1);
+    } else if (q==4) {
+      _motors.moveAnalog(o*-1, r*-1);
     }
 
     if (_sonar.isBlocked()) {

@@ -22,6 +22,8 @@ CAT g_cat;
 long _cnt = 0;
 
 volatile bool _espNowReceived = false;
+uint16_t _espNowReceiveCount = 0;
+uint16_t _espNowActionCount = 0;
 
 constexpr uint8_t MAX_ESPNOW_SIZE = 100;
 uint8_t _espNowReceiveBuffer[MAX_ESPNOW_SIZE];
@@ -38,10 +40,11 @@ void onEspNowReceived(const uint8_t * macAddr_, const uint8_t *incomingData_, in
       len_ = MAX_ESPNOW_SIZE;
     }
 
-    _espNowReceived = true;
     _espNowReceiveLen = len_;
     memcpy(_espNowReceiveBuffer, incomingData_, len_);
+    _espNowReceiveCount++;
     g_cat.onEspNowReceived(macAddr_, _espNowReceiveBuffer, _espNowReceiveLen);
+    _espNowReceived = true;
   }
 }
 
@@ -118,12 +121,23 @@ void loop() {
   }
 
   if (bcstem::_espNowReceived) {
+    
     noInterrupts();
     uint8_t buffer[bcstem::MAX_ESPNOW_SIZE];
     int len = bcstem::_espNowReceiveLen;
     memcpy(buffer, bcstem::_espNowReceiveBuffer, len);
+    bcstem::_espNowActionCount++;
+    auto espNowReceiveCount = bcstem::_espNowReceiveCount;
     bcstem::_espNowReceived = false;
     interrupts();
+
+    if (espNowReceiveCount!=bcstem::_espNowActionCount) {
+      Serial.print("ESP-NOW receive count: ");
+      Serial.print(espNowReceiveCount);
+      Serial.print(" / action count: ");
+      Serial.println(bcstem::_espNowActionCount);
+    }
+
     bcstem::g_cat.onEspNowReceivedAction(buffer, len);
   }
 
