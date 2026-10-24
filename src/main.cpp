@@ -1,14 +1,12 @@
 #include <Arduino.h>
 
-
 // App
-#include "bcapp/zerocat.h"
-#include "bcapp/zeroremote.h"
-
 #if defined(BC_CAT)
-using CAT = bcstem::ZeroCat;
+  #include "bcapp/zerocat.h"
+  using CAT = bcstem::ZeroCat;
 #elif defined(BC_REMOTE)
-using CAT = bcstem::ZeroRemote;
+  #include "bcapp/zeroremote.h"
+  using CAT = bcstem::ZeroRemote;
 #endif
 
 using PinMap = CAT::PinMap;

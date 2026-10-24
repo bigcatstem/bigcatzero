@@ -28,10 +28,11 @@ public:
       return;
     }
 
-    if (_isBlocked) {
-      _motors.moveAnalog(0, 0);
-      _isBlocked = _sonar.isBlocked();
-      //return;
+    // Skip the joystick movement if newly blocked
+    bool isNewlyBlocked = checkBlockedAndBackward();
+    if (isNewlyBlocked) {
+      Serial.println("Newly blocked. Skip joystick movement");
+      return;
     }
 
     // -256->256
@@ -79,10 +80,7 @@ public:
       _motors.moveAnalog(o*-1, r*-1);
     }
 
-    if (_sonar.isBlocked()) {
-      _isBlocked = true;
-      _motors.moveAnalog(0, 0);
-    }
+    checkBlockedAndBackward();
 
   }
 
@@ -90,24 +88,28 @@ public:
     Serial.println("RemoteWalker::setup");
   }
 
-  void loop() {
-
-    bool wasBlocked = _isBlocked;
-    _isBlocked = _sonar.isBlocked();
-    if (_isBlocked) {
-
+  bool checkBlockedAndBackward() {
+    bool isBlocked = _sonar.isBlocked();
+    if (isBlocked) {
+      Serial.println("remotewalker blocked");
       _motors.moveAnalog(-75, -75);
+    } 
 
-      if (!wasBlocked) {
-        testServo(_servo);
-      }
-
+    // unblock
+    if (_wasBlocked && !isBlocked) {
+      Serial.println("remotewalker unblocked");
+      _motors.moveAnalog(0, 0);
+      _wasBlocked = false;
     }
 
-    if (wasBlocked && !_isBlocked) {
-      _motors.moveAnalog(0, 0);      
-    }
+    bool isNewlyBlocked = isBlocked && !_wasBlocked;
+    _wasBlocked = isBlocked;
 
+    return isNewlyBlocked;
+  }
+
+  void loop() {
+    checkBlockedAndBackward();
   }
 
 private:
@@ -116,9 +118,7 @@ private:
   MOTORSET& _motors;
   Servo& _servo;
 
-  CatMode _catMode;
-
-  bool _isBlocked = false;
+  bool _wasBlocked = false;
 
 };
 

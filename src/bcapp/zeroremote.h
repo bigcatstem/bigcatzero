@@ -81,7 +81,7 @@ public:
     Serial.print(_xCenter);
     Serial.print(",");
     Serial.print(_yCenter);
-    Serial.print(" Tolerance");
+    Serial.print(" Tolerance:");
     Serial.print(_xTolerance);
     Serial.print(",");
     Serial.println(_yTolerance);
@@ -110,7 +110,6 @@ public:
     analogWrite(PinMap::LED_R, 127);
     analogWrite(PinMap::LED_G, 127);
     analogWrite(PinMap::LED_B, 127);
-
 
     setCenter();
   }
@@ -193,7 +192,11 @@ public:
 
     if (isButtonNewlyPushed(_wasButtonPushed)) {
 
-      _catMode = _catMode==REMOTE_WALKER? RANDOM_WALKER : REMOTE_WALKER;
+      Serial.println("Button pushed, change mode");
+      _catMode = static_cast<CatMode>((_catMode + 1) % CatMode::CAT_MODE_MAX);
+      //if (_catMode >= CatMode::CAT_MODE_MAX) {
+      //  _catMode = CatMode::RANDOM_WALKER;
+      //}
 
       sendEvent(_lastXY.x, _lastXY.y);
     }
@@ -268,7 +271,7 @@ public:
     } else {
       Serial.print("Last Packet Send Status:");
       Serial.print(status);
-      Serial.println("Delivery Fail");
+      Serial.println(" Delivery Fail");
     }
     //Serial.print("\r\nLast Packet Send Status:");
     //Serial.print(status);
@@ -279,20 +282,15 @@ public:
 private:
 
   ezButton _button;
-
   XY16 _lastXY;
-
   bool _lastAtCenter = true;
   int16_t _xCenter;
   int16_t _yCenter;
   int16_t _xTolerance;
   int16_t _yTolerance;
   int _lastCounter = 0;
-
   bool _wasButtonPushed = false;
-
   CatMode _catMode = REMOTE_WALKER;
-
   uint16_t _espNowSeq = 0;
 };
 

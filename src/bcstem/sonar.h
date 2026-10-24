@@ -12,15 +12,31 @@ public:
 
   static const int TIMEOUT=-1;
 
-  bool setup(int sensitivity_, int cmLimit_) {
+  bool setup(int sensitivity_, int mmLimit_) {
     Serial.println("SonarBase::setup");
     _sensitivity = sensitivity_;
-    _cmLimit = cmLimit_;
+    _mmLimit = mmLimit_;
 
     return true;
   }
 
   virtual int ping() = 0;
+
+  enum class Result {
+    TOO_CLOSE,
+    IN_RANGE,
+    TOO_FAR,
+    OUT_OF_REACH
+  };
+
+  Result check(int mmClose_, int mmFar_, int mmReachLimit_) {
+    int mm = ping();
+    if (mm==TIMEOUT) { return Result::OUT_OF_REACH; }
+    if (mm > mmReachLimit_) { return Result::OUT_OF_REACH; }
+    if (mm > mmFar_) { return Result::TOO_FAR; }
+    if (mm < mmClose_) { return Result::TOO_CLOSE; }
+    return Result::IN_RANGE;
+  }
 
   bool isBlocked() {
     for (int i=0;i<_sensitivity;i++)
@@ -31,58 +47,66 @@ public:
   }
 
   bool isFree() {
-    int cm = ping();
-    if (cm==TIMEOUT) { return true; }
-    return cm > 30;
+    int mm = ping();
+    if (mm==TIMEOUT) { return true; }
+    return mm > 300;
   }
 
   bool isBlockedOnce() {
-    int cm = ping();
-    if (cm==TIMEOUT) { return false; }
-    //auto s = std::format("{} {} {}",dCM, _cmLimit, dCM < _cmLimit);
+    int mm = ping();
+    if (mm==TIMEOUT) { return false; }
+    //auto s = std::format("{} {} {}",dCM, _mmLimit, dCM < _mmLimit);
     //Serial.println(s.c_str());
-    return cm < _cmLimit;
+    return mm < _mmLimit;
   }
 
 protected:
   int _sensitivity;
-  int _cmLimit;
+  int _mmLimit;
 };
 
 template <typename CFG>
 class Sonar53L0 : public SonarBase {
 
 public: 
-  void setup(int sensitivity_, int cmLimit_) {
-    SonarBase::setup(sensitivity_, cmLimit_);
+  void setup(int sensitivity_, int mmLimit_) {
+    SonarBase::setup(sensitivity_, mmLimit_);
     //Wire.begin(SDA, SLC);
 
     if constexpr (CFG::Sonar::enable) {
 
       if(!bcstem::testI2CAddress(0x29)) {
+        Serial.println("Sonar53L0::setup testI2CAddress failed");
         GlobalObject::failSetup();
       }
 
       if (!_53L0.init()) {
+        Serial.println("Sonar53L0::setup init failed");
         GlobalObject::failSetup();
       }
     }
+    Serial.println("Sonar53L0::setup done");
   }  
 
   // return TIMEOUT if timeout
-  // return distance in cm
+  // return distance in mm
   int ping() {
+//Serial.println("Sonar53L0::ping");
+
     if constexpr (!CFG::Sonar::enable) {
       return TIMEOUT;
     }
 
-    int cm =  _53L0.readRangeSingleMillimeters() / 10;
+    int mm =  _53L0.readRangeSingleMillimeters();
 
     if (_53L0.timeoutOccurred()) { 
+//Serial.println("Sonar53L0::ping TIMNEOUT");
       return TIMEOUT; 
     }
 
-    return cm;
+//Serial.print("Sonar53L0::ping cm:");
+//Serial.println(cm);
+    return mm;
   }
 
 private:
@@ -94,8 +118,8 @@ private:
 class Sonar6180 : public SonarBase {
 
 public: 
-  void setup(int sensitivity_, int cmLimit_) {
-    SonarBase::setup(sensitivity_, cmLimit_);
+  void setup(int sensitivity_, int mmLimit_) {
+    SonarBase::setup(sensitivity_, mmLimit_);
 
     if(!bcstem::testI2CAddress(0x29)) {
       GlobalObject::failSetup();
@@ -130,8 +154,8 @@ class SonarT : public SonarBase {
 
 public:
 
-  void setup(int sensitivity_, int cmLimit_) {
-    SonarBase::setup(sensitivity_, cmLimit_);
+  void setup(int sensitivity_, int mmLimit_) {
+    SonarBase::setup(sensitivity_, mmLimit_);
     Serial.println("SonarT::setup");
 
     pinMode(ECHO, INPUT);

@@ -92,9 +92,9 @@ public:
   }
 
   void actionIfTooClose(bool needScan_) {
-    int cm = _sonar.ping();
+    int mm = _sonar.ping();
 
-    if (cm < 5) {
+    if (mm < 50) {
       actionWithDelay(ACTION_BACK);
     }
 
@@ -201,9 +201,9 @@ public:
     if (isFree && _mode==MODE_BLOCKED) {
 
       _mode = MODE_NORMAL;
-      int cm = _sonar.ping();
+      int mm = _sonar.ping();
 
-      if (cm > 30) {
+      if (mm > 300) {
         action(ACTION_FORWARD);
       } else {
         nextRandomAction();

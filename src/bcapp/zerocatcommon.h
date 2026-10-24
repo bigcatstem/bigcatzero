@@ -4,7 +4,13 @@ namespace bcstem {
 
 enum CatMode : uint8_t {
   RANDOM_WALKER = 0,
-  REMOTE_WALKER
+  REMOTE_WALKER,
+  FOLLOWER,
+  CAT_MODE_MAX
+};
+
+enum EventType : uint8_t {
+  EVENT_JOYSTICK = 0,
 };
 
 struct JoystickEvent {
@@ -16,7 +22,7 @@ struct JoystickEvent {
   CatMode catMode;
 
   JoystickEvent(int16_t x_, int16_t y_, CatMode catMode_) : x(x_), y(y_), catMode(catMode_) {
-    type = 1;
+    type = EVENT_JOYSTICK;
   }
 
   void print() const {

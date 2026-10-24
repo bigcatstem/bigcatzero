@@ -15,16 +15,17 @@
 #include "zerocatcommon.h"
 #include "randomwalker.h"
 #include "remotewalker.h"
+#include "follower.h"
 
 namespace bcstem {
 
 struct CFG {
 
   struct Sonar {
-    static constexpr bool enable = false;
+    static constexpr bool enable = true;
     static constexpr int Sensitivity = 1;
-    static constexpr int cmLimit = 20;
-    //static const int cmFree = 30;
+    static constexpr int mmLimit = 200;
+    //static const int mmFree = 300;
   };
 
   struct Motor {
@@ -153,6 +154,7 @@ public:
   ZeroCat() : 
     _randomWalker(_sonar, _motors, _servo),
     _remoteWalker(_sonar, _motors, _servo),
+    _follower(_sonar, _motors, _servo),
     _catMode(REMOTE_WALKER)
   {
   }
@@ -165,9 +167,10 @@ public:
     _servo.attach(PinMap::SERVO);
     _servo.write(90);
     _motors.setup();
-    _sonar.setup(CFG::Sonar::Sensitivity, CFG::Sonar::cmLimit);
+    _sonar.setup(CFG::Sonar::Sensitivity, CFG::Sonar::mmLimit);
     _randomWalker.setup();
     _remoteWalker.setup();
+    _follower.setup();
 
     testServo(_servo);
     //g_timerServo.start();
@@ -179,10 +182,13 @@ public:
     switch(_catMode) {
       case REMOTE_WALKER:
         _remoteWalker.loop();
-      break;
+        break;
+      case FOLLOWER:
+        _follower.loop();
+        break;
       case RANDOM_WALKER:
         _randomWalker.loop();
-      break;
+        break;
     }
 
     //Serial.println("zerocat::loop end");
@@ -229,6 +235,7 @@ private:
 
   RandomWalker<CFG, Sonar,MotorSet> _randomWalker;
   RemoteWalker<CFG, Sonar,MotorSet> _remoteWalker;
+  Follower<CFG, Sonar,MotorSet> _follower;
   CatMode _catMode; 
 
 };
